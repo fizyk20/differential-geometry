@@ -1,3 +1,5 @@
+use super::tensors::Tensor;
+
 pub trait CoordinateSystem {
 	type CoordType: Clone;		// this will let people use types they like (f32, f64, Mpfr, whatever)
 	fn dimension() -> u8;
@@ -14,4 +16,11 @@ impl<T> Point<T> where T: CoordinateSystem {
 		Point { x: Vec::from(coords) }
 	}
 	
+}
+
+pub trait ConversionTo<T: CoordinateSystem> : CoordinateSystem {
+	fn convert_point(p: &Point<Self>) -> Point<T>;
+	
+	fn jacobian(p: &Point<Self>) -> Tensor<Self>;
+	fn inv_jacobian(p: &Point<Self>) -> Tensor<Self>;
 }
