@@ -5,8 +5,10 @@ pub enum IndexType {
 	Contravariant
 }
 
-pub struct Tensor<T: CoordinateSystem> {
-	rank: Vec<IndexType>,
-	point: Point<T>,
-	coords:	Vec<T::CoordType>
+pub trait Tensor<T: CoordinateSystem> {
+	
+	fn get_point(&self) -> &Point<T>;
+	fn get_coord(&self, &[u8]) -> T::CoordType;
+	fn get_rank(&self) -> Vec<IndexType>;
+	
 }
