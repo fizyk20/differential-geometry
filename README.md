@@ -1,4 +1,7 @@
+[![Build Status](https://travis-ci.org/fizyk20/differential-geometry.svg?branch=master)](https://travis-ci.org/fizyk20/differential-geometry)
 # differential-geometry
+
+[Crate documentation](https://fizyk20.github.io/differential-geometry/diffgeom)
 
 This is a crate for differential-geometric calculations, like tensor calculus on manifolds etc.
 
