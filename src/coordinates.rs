@@ -28,6 +28,14 @@ impl<T> Point<T> where T: CoordinateSystem {
 	
 }
 
+impl<T> Clone for Point<T> where T: CoordinateSystem {
+	
+	fn clone(&self) -> Point<T> {
+		Point::new(&self.x)
+	}
+	
+}
+
 /// Trait used for conversions between different coordinate systems. Implementing ConversionTo<T> for a CoordinateSystem
 /// will allow objects in that system to be converted to the system T (note that T also has to be a CoordinateSystem).
 pub trait ConversionTo<T: CoordinateSystem> : CoordinateSystem {
