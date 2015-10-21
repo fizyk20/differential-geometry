@@ -16,9 +16,14 @@ pub trait Tensor<T: CoordinateSystem> {
 	/// Returns the point at which the tensor is defined.
 	fn get_point(&self) -> &Point<T>;
 	
-	/// Returns the coordinate of the tensor, at indices specified by the slice.
+	/// Returns a reference to a coordinate of the tensor, at indices specified by the slice.
 	/// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
-	fn get_coord(&self, i: &[usize]) -> T::CoordType;
+	fn get_coord(&self, i: &[usize]) -> &T::CoordType;
+	
+	
+	/// Returns a mutable reference to a coordinate of the tensor, at indices specified by the slice.
+	/// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
+	fn get_coord_mut(&mut self, i: &[usize]) -> &mut T::CoordType; 
 	
 	/// Returns the rank of the tensor, that is, the list of the index types.
 	/// A vector would return vec![Contravariant], a metric tensor: vec![Covariant, Covariant].
