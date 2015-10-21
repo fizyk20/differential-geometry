@@ -8,7 +8,7 @@ pub trait CoordinateSystem {
 	
 	/// Function returning the dimension (number of coordinates) for dynamic checks.
 	/// This would be better solved with the dimension as a type parameter, but it's not supported as of Rust 1.3.
-	fn dimension() -> u8;
+	fn dimension() -> usize;
 }
 
 /// Struct representing a point on the manifold. The information about the coordinate system is saved in the type parameter,
@@ -22,7 +22,7 @@ impl<T> Point<T> where T: CoordinateSystem {
 	
 	/// Creates a new point with coordinates described by the slice.
 	pub fn new(coords: &[T::CoordType]) -> Point<T> {
-		assert_eq!(coords.len(), T::dimension() as usize);
+		assert_eq!(coords.len(), T::dimension());
 		Point { x: Vec::from(coords) }
 	}
 	

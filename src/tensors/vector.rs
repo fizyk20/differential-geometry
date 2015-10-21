@@ -14,9 +14,9 @@ impl<T> Tensor<T> for Vector<T>
 		&self.p
 	}
 	
-	fn get_coord(&self, i: &[u8]) -> T::CoordType {
+	fn get_coord(&self, i: &[usize]) -> T::CoordType {
 		assert_eq!(i.len(), 1);
-		self.x[i[0] as usize].clone()
+		self.x[i[0]].clone()
 	}
 	
 	fn get_rank(&self) -> Vec<IndexType> {
