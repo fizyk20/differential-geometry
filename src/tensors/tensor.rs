@@ -1,4 +1,4 @@
-use coordinates::{CoordinateSystem, Point};
+use coordinates::{CoordinateSystem, Point, Zero};
 use std::ops::{Index, IndexMut};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
@@ -32,6 +32,7 @@ pub trait Tensor<T: CoordinateSystem> {
 	
 }
 
+/// A generic tensor structure, representing a tensor with an arbitrary rank
 pub struct GenericTensor<T: CoordinateSystem> {
 	rank: Vec<IndexType>,
 	p: Point<T>,
@@ -74,5 +75,22 @@ impl<'a, T> Index<&'a [usize]> for GenericTensor<T> where T: CoordinateSystem {
 impl<'a, T> IndexMut<&'a [usize]> for GenericTensor<T> where T: CoordinateSystem {
 	fn index_mut(&mut self, idx: &'a [usize]) -> &mut T::CoordType {
 		self.get_coord_mut(idx)
+	}
+}
+
+impl<T> GenericTensor<T> where T: CoordinateSystem {
+	
+	pub fn new(rank: Vec<IndexType>, point: Point<T>) -> GenericTensor<T> {
+		let len = rank.len() as u32;
+		let num_coords = T::dimension().pow(len);
+		let mut coords: Vec<T::CoordType> = Vec::with_capacity(num_coords);
+		for _ in 0..num_coords {
+			coords.push(T::CoordType::zero());
+		}
+		GenericTensor {
+			rank: rank,
+			p: point,
+			x: coords
+		}
 	}
 }

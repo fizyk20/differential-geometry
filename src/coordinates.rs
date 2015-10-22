@@ -1,10 +1,44 @@
+use std::ops::{Add, Sub, Mul, Div, Neg};
 use super::tensors::Tensor;
+
+pub trait Zero {
+	fn zero() -> Self;
+}
+
+impl Zero for f64 {
+	fn zero() -> f64 { 0.0 }
+}
+
+impl Zero for f32 {
+	fn zero() -> f32 { 0.0 }
+}
+
+pub trait One {
+	fn one() -> Self;
+}
+
+impl One for f64 {
+	fn one() -> f64 { 1.0 }
+}
+
+impl One for f32 {
+	fn one() -> f32 { 1.0 }
+}
+
+pub trait Field : Add<Self,Output=Self> + Sub<Self,Output=Self> 
+	+ Mul<Self,Output=Self> + Div<Self,Output=Self> 
+	+ Neg<Output=Self>
+	+ Zero + One
+	{}
+	
+impl Field for f64 {}
+impl Field for f32 {}
 
 /// CoordinateSystem trait marks a struct (usually a unit struct) as representing a coordinate system.
 pub trait CoordinateSystem {
 	/// CoordType represents a type used for the coordinates. This way they aren't limited to a single numeric type,
 	/// but for example Mpfr can be used if greater precision is needed.
-	type CoordType: Clone;
+	type CoordType: Field + Clone;
 	
 	/// Function returning the dimension (number of coordinates) for dynamic checks.
 	/// This would be better solved with the dimension as a type parameter, but it's not supported as of Rust 1.3.
