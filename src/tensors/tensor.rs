@@ -1,4 +1,4 @@
-use coordinates::{CoordinateSystem, Point, Zero};
+use coordinates::{CoordinateSystem, Point, Field};
 use std::ops::{Index, IndexMut};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either

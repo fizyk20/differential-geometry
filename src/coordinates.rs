@@ -1,41 +1,42 @@
 use std::ops::{Add, Sub, Mul, Div, Neg};
 use super::tensors::Tensor;
 
-pub trait Zero {
+/// Trait marking a type as representing an algebraic field.
+/// Only such types are appropriate for being used as coordinates.
+pub trait Field
+	: Add<Self,Output=Self>
+	+ Sub<Self,Output=Self>
+	+ Mul<Self,Output=Self>
+	+ Div<Self,Output=Self>
+	+ Neg<Output=Self>
+	+ Sized
+{
 	fn zero() -> Self;
-}
-
-impl Zero for f64 {
-	fn zero() -> f64 { 0.0 }
-}
-
-impl Zero for f32 {
-	fn zero() -> f32 { 0.0 }
-}
-
-pub trait One {
 	fn one() -> Self;
 }
 
-impl One for f64 {
-	fn one() -> f64 { 1.0 }
+impl Field for f32 {
+	fn zero() -> f32 {
+		0.0
+	}
+
+	fn one() -> f32 {
+		1.0
+	}
 }
 
-impl One for f32 {
-	fn one() -> f32 { 1.0 }
-}
+impl Field for f64 {
+	fn zero() -> f64 {
+		0.0
+	}
 
-pub trait Field : Add<Self,Output=Self> + Sub<Self,Output=Self> 
-	+ Mul<Self,Output=Self> + Div<Self,Output=Self> 
-	+ Neg<Output=Self>
-	+ Zero + One
-	{}
-	
-impl Field for f64 {}
-impl Field for f32 {}
+	fn one() -> f64 {
+		1.0
+	}
+}
 
 /// CoordinateSystem trait marks a struct (usually a unit struct) as representing a coordinate system.
-pub trait CoordinateSystem {
+pub trait CoordinateSystem : Sized {
 	/// CoordType represents a type used for the coordinates. This way they aren't limited to a single numeric type,
 	/// but for example Mpfr can be used if greater precision is needed.
 	type CoordType: Field + Clone;
