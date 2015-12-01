@@ -8,9 +8,10 @@ pub trait CoordinateSystem : Sized {
 	/// An associated type representing the dimension of the coordinate system
 	type Dimension: Unsigned;
 
-	/// Function returning a small value for purposes of numerical differentiation
+	/// Function returning a small value for purposes of numerical differentiation.
 	/// What is considered a small value may depend on the point, hence the parameter.
-	fn small(x: &Point<Self>) -> f64;
+	/// Returns just 0.01 by default.
+	fn small(x: &Point<Self>) -> f64 { 0.01 }
 
 	/// Function returning the dimension
 	fn dimension() -> usize { Self::Dimension::to_usize() }
