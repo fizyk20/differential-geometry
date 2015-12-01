@@ -14,13 +14,13 @@ pub trait TensorIndex {
 	fn index_type() -> IndexType;
 }
 
-pub struct Up;
-impl TensorIndex for Up {
+pub struct ContravariantIndex;
+impl TensorIndex for ContravariantIndex {
 	fn index_type() -> IndexType { IndexType::Contravariant }
 }
 
-pub struct Down;
-impl TensorIndex for Down {
+pub struct CovariantIndex;
+impl TensorIndex for CovariantIndex {
 	fn index_type() -> IndexType { IndexType::Covariant }
 }
 
@@ -29,12 +29,12 @@ pub trait Variance {
 	fn variance() -> Vec<IndexType>;
 }
 
-impl Variance for Up {
+impl Variance for ContravariantIndex {
 	fn rank() -> usize { 1 }
 	fn variance() -> Vec<IndexType> { vec![IndexType::Contravariant] }
 }
 
-impl Variance for Down {
+impl Variance for CovariantIndex {
 	fn rank() -> usize { 1 }
 	fn variance() -> Vec<IndexType> { vec![IndexType::Covariant] }
 }
@@ -119,6 +119,6 @@ impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem,
 	}
 }
 
-pub type Vector<T> = Tensor<T, Up>;
-pub type Covector<T> = Tensor<T, Down>;
-pub type Matrix<T> = Tensor<T, (Up, Down)>;
+pub type Vector<T> = Tensor<T, ContravariantIndex>;
+pub type Covector<T> = Tensor<T, CovariantIndex>;
+pub type Matrix<T> = Tensor<T, (ContravariantIndex, CovariantIndex)>;
