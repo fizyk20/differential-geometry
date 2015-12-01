@@ -51,61 +51,61 @@ impl<T, U> Variance for (T, U) where T: Variance, U: TensorIndex {
 	}
 }
 
-/// This is a trait that represents the basic properties of a tensor - having coordinates, a defined rank and being defined at a
-/// point of the manifold.
-/// Tensor-ness being a trait will allow type like vectors and matrices be incompatible on the level of concrete types, but still compatible
-/// as trait objects, so that functions will be able to specify if they accept a particular type of tensor, or any type.
-pub trait Tensor<T: CoordinateSystem, U: Variance> {
-	
-	/// Returns the point at which the tensor is defined.
-	fn get_point(&self) -> &Point<T>;
-	
-	/// Returns a reference to a coordinate of the tensor, at indices specified by the slice.
-	/// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
-	fn get_coord(&self, i: &[usize]) -> &f64;
-	
-	/// Returns a mutable reference to a coordinate of the tensor, at indices specified by the slice.
-	/// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
-	fn get_coord_mut(&mut self, i: &[usize]) -> &mut f64; 
-	
-	/// Returns the variance of the tensor, that is, the list of the index types.
-	/// A vector would return vec![Contravariant], a metric tensor: vec![Covariant, Covariant].
-	fn get_variance() -> Vec<IndexType> { U::variance() }
-
-	/// Returns the rank of the tensor
-	fn get_rank() -> usize { U::rank() }
-	
-}
-
-/// A generic tensor structure, representing a tensor with an arbitrary rank
-pub struct GenericTensor<T: CoordinateSystem, U: Variance> {
+/// This is a struct that represents a generic tensor
+pub struct Tensor<T: CoordinateSystem, U: Variance> {
 	p: Point<T>,
 	x: Vec<f64>,
 	phantom: PhantomData<U>
 }
 
-impl<T, U> Tensor<T, U> for GenericTensor<T, U> where T: CoordinateSystem, U: Variance {
+impl<T, U> Tensor<T, U> where T: CoordinateSystem, U: Variance {
 	
-	fn get_point(&self) -> &Point<T> {
+	/// Returns the point at which the tensor is defined.
+	pub fn get_point(&self) -> &Point<T> {
 		&self.p
 	}
 	
-	fn get_coord(&self, i: &[usize]) -> &f64 {
+	/// Returns a reference to a coordinate of the tensor, at indices specified by the slice.
+	/// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
+	pub fn get_coord(&self, i: &[usize]) -> &f64 {
 		assert_eq!(i.len(), U::rank());
 		let dim = T::dimension();
 		let index = i.into_iter().fold(0, |res, idx| { assert!(*idx < dim); res*dim + idx });
 		&self.x[index]
 	}
 	
-	fn get_coord_mut(&mut self, i: &[usize]) -> &mut f64 {
+	/// Returns a mutable reference to a coordinate of the tensor, at indices specified by the slice.
+	/// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
+	pub fn get_coord_mut(&mut self, i: &[usize]) -> &mut f64 {
 		assert_eq!(i.len(), U::rank());
 		let dim = T::dimension();
 		let index = i.into_iter().fold(0, |res, idx| { assert!(*idx < dim); res*dim + idx });
 		&mut self.x[index]
 	}
+	
+	/// Returns the variance of the tensor, that is, the list of the index types.
+	/// A vector would return vec![Contravariant], a metric tensor: vec![Covariant, Covariant].
+	pub fn get_variance() -> Vec<IndexType> { U::variance() }
+
+	/// Returns the rank of the tensor
+	pub fn get_rank() -> usize { U::rank() }
+	
+	pub fn new(point: Point<T>) -> Tensor<T, U> {
+		let len = U::rank();
+		let num_coords = T::dimension().pow(len as u32);
+		let mut coords: Vec<f64> = Vec::with_capacity(num_coords);
+		for _ in 0..num_coords {
+			coords.push(0.0);
+		}
+		Tensor {
+			p: point,
+			x: coords,
+			phantom: PhantomData
+		}
+	}
 }
 	
-impl<'a, T, U> Index<&'a [usize]> for GenericTensor<T, U> where T: CoordinateSystem, U: Variance {
+impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem, U: Variance {
 	type Output = f64;
 	
 	fn index(&self, idx: &'a [usize]) -> &f64 {
@@ -113,25 +113,8 @@ impl<'a, T, U> Index<&'a [usize]> for GenericTensor<T, U> where T: CoordinateSys
 	}
 }
 
-impl<'a, T, U> IndexMut<&'a [usize]> for GenericTensor<T, U> where T: CoordinateSystem, U: Variance {
+impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem, U: Variance {
 	fn index_mut(&mut self, idx: &'a [usize]) -> &mut f64 {
 		self.get_coord_mut(idx)
-	}
-}
-
-impl<T, U> GenericTensor<T, U> where T: CoordinateSystem, U: Variance {
-	
-	pub fn new(point: Point<T>) -> GenericTensor<T, U> {
-		let len = U::rank();
-		let num_coords = T::dimension().pow(len as u32);
-		let mut coords: Vec<f64> = Vec::with_capacity(num_coords);
-		for _ in 0..num_coords {
-			coords.push(0.0);
-		}
-		GenericTensor {
-			p: point,
-			x: coords,
-			phantom: PhantomData
-		}
 	}
 }
