@@ -11,3 +11,6 @@ repository = "https://github.com/fizyk20/differential-geometry.git"
 
 name = "diffgeom"
 crate-type = ["rlib", "dylib"]
+
+[dependencies]
+typenum = "1.1"

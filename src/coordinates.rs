@@ -1,15 +1,19 @@
 use std::ops::{Index, IndexMut};
 use super::tensors::{IndexType, Tensor, GenericTensor};
 use std::marker::PhantomData;
+use typenum::uint::Unsigned;
 
 /// CoordinateSystem trait marks a struct (usually a unit struct) as representing a coordinate system.
-pub trait CoordinateSystem : Sized {	
-	/// Function returning the dimension (number of coordinates) for dynamic checks.
-	/// This would be better solved with the dimension as a type parameter, but it's not supported as of Rust 1.3.
-	fn dimension() -> usize;
+pub trait CoordinateSystem : Sized {
+	/// An associated type representing the dimension of the coordinate system
+	type Dimension: Unsigned;
 
 	/// Function returning a small value for purposes of numerical differentiation
-	fn small() -> f64;
+	/// What is considered a small value may depend on the point, hence the parameter.
+	fn small(x: &Point<Self>) -> f64;
+
+	/// Function returning the dimension
+	fn dimension() -> usize { Self::Dimension::to_usize() }
 }
 
 /// Struct representing a point on the manifold. The information about the coordinate system is saved in the type parameter,
@@ -63,14 +67,14 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
 	fn jacobian(p: &Point<Self>) -> Box<Tensor<T>> {
 		let d = Self::dimension();
 		let mut result = Box::new(GenericTensor::new(vec![IndexType::Contravariant, IndexType::Covariant], Self::convert_point(p)));
-		let h = Self::small();
+		let h = Self::small(p);
 
 		for j in 0..d {
 			let mut x = p.clone();
 			x[j] = x[j] - h;
 			let y1 = Self::convert_point(&x);
 
-			x[j] = x[j] + h + h;
+			x[j] = x[j] + h*2.0;
 			let y2 = Self::convert_point(&x);
 
 			for i in 0..d {
