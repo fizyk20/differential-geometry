@@ -118,3 +118,7 @@ impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem,
 		self.get_coord_mut(idx)
 	}
 }
+
+pub type Vector<T> = Tensor<T, Up>;
+pub type Covector<T> = Tensor<T, Down>;
+pub type Matrix<T> = Tensor<T, (Up, Down)>;

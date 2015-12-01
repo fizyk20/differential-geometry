@@ -1,5 +1,5 @@
 use std::ops::{Index, IndexMut};
-use super::tensors::{Tensor, Up, Down};
+use super::tensors::{Matrix};
 use std::marker::PhantomData;
 use typenum::uint::Unsigned;
 
@@ -66,9 +66,9 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
 	fn convert_point(p: &Point<Self>) -> Point<T>;
 	
 	/// Function calculating a Jacobian at a point - that is, the matrix of derivatives of the coordinate conversions.
-	fn jacobian(p: &Point<Self>) -> Tensor<T, (Up, Down)> {
+	fn jacobian(p: &Point<Self>) -> Matrix<T> {
 		let d = Self::dimension();
-		let mut result = Tensor::new(Self::convert_point(p));
+		let mut result = Matrix::new(Self::convert_point(p));
 		let h = Self::small(p);
 
 		for j in 0..d {
@@ -90,5 +90,5 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
 	}
 	
 	/// The inverse matrix of the Jacobian at a point.
-	fn inv_jacobian(p: &Point<Self>) -> Tensor<T, (Up, Down)>;
+	fn inv_jacobian(p: &Point<Self>) -> Matrix<T>;
 }
