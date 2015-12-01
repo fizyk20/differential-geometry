@@ -1,12 +1,12 @@
 use std::ops::{Index, IndexMut};
 use super::tensors::{Matrix};
-use std::marker::PhantomData;
 use typenum::uint::Unsigned;
+use generic_array::{GenericArray, ArrayLength};
 
 /// CoordinateSystem trait marks a struct (usually a unit struct) as representing a coordinate system.
 pub trait CoordinateSystem : Sized {
 	/// An associated type representing the dimension of the coordinate system
-	type Dimension: Unsigned;
+	type Dimension: Unsigned + ArrayLength<f64>;
 
 	/// Function returning a small value for purposes of numerical differentiation.
 	/// What is considered a small value may depend on the point, hence the parameter.
@@ -22,16 +22,14 @@ pub trait CoordinateSystem : Sized {
 /// so that only operations on objects in one coordinate system will be allowed.
 pub struct Point<T: CoordinateSystem> {
 	/// The coordinates of the point.
-	x: Vec<f64>,
-	phantom: PhantomData<T>
+	x: GenericArray<f64, T::Dimension>
 }
 
 impl<T> Point<T> where T: CoordinateSystem {
 	
 	/// Creates a new point with coordinates described by the slice.
-	pub fn new(coords: &[f64]) -> Point<T> {
-		assert_eq!(coords.len(), T::dimension());
-		Point { x: Vec::from(coords), phantom: PhantomData }
+	pub fn new(coords: GenericArray<f64, T::Dimension>) -> Point<T> {
+		Point { x: coords }
 	}
 	
 }
@@ -39,7 +37,7 @@ impl<T> Point<T> where T: CoordinateSystem {
 impl<T> Clone for Point<T> where T: CoordinateSystem {
 	
 	fn clone(&self) -> Point<T> {
-		Point::new(&self.x)
+		Point::new(self.x.clone())
 	}
 	
 }
