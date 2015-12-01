@@ -1,5 +1,5 @@
 use coordinates::{CoordinateSystem, Point};
-use super::tensor::{Tensor, IndexType};
+use super::tensor::{Tensor, Up};
 use std::ops::{Index, IndexMut};
 
 /// Struct representing a vector (that is, a rank-1 contravariant tensor)
@@ -8,7 +8,7 @@ pub struct Vector<T: CoordinateSystem> {
 	x: Vec<f64>
 }
 
-impl<T> Tensor<T> for Vector<T> where T: CoordinateSystem {
+impl<T> Tensor<T, Up> for Vector<T> where T: CoordinateSystem {
 	
 	fn get_point(&self) -> &Point<T> {
 		&self.p
@@ -22,10 +22,6 @@ impl<T> Tensor<T> for Vector<T> where T: CoordinateSystem {
 	fn get_coord_mut(&mut self, i: &[usize]) -> &mut f64 {
 		assert_eq!(i.len(), 1);
 		&mut self.x[i[0]]
-	}
-	
-	fn get_rank(&self) -> Vec<IndexType> {
-		vec![IndexType::Contravariant]
 	}
 			
 }

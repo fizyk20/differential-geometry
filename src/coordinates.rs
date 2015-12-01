@@ -1,5 +1,5 @@
 use std::ops::{Index, IndexMut};
-use super::tensors::{IndexType, Tensor, GenericTensor};
+use super::tensors::{GenericTensor, Up, Down};
 use std::marker::PhantomData;
 use typenum::uint::Unsigned;
 
@@ -11,6 +11,7 @@ pub trait CoordinateSystem : Sized {
 	/// Function returning a small value for purposes of numerical differentiation.
 	/// What is considered a small value may depend on the point, hence the parameter.
 	/// Returns just 0.01 by default.
+	#[allow(unused_variables)]
 	fn small(x: &Point<Self>) -> f64 { 0.01 }
 
 	/// Function returning the dimension
@@ -65,9 +66,9 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
 	fn convert_point(p: &Point<Self>) -> Point<T>;
 	
 	/// Function calculating a Jacobian at a point - that is, the matrix of derivatives of the coordinate conversions.
-	fn jacobian(p: &Point<Self>) -> Box<Tensor<T>> {
+	fn jacobian(p: &Point<Self>) -> GenericTensor<T, (Up, Down)> {
 		let d = Self::dimension();
-		let mut result = Box::new(GenericTensor::new(vec![IndexType::Contravariant, IndexType::Covariant], Self::convert_point(p)));
+		let mut result = GenericTensor::new(Self::convert_point(p));
 		let h = Self::small(p);
 
 		for j in 0..d {
@@ -89,5 +90,5 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
 	}
 	
 	/// The inverse matrix of the Jacobian at a point.
-	fn inv_jacobian(p: &Point<Self>) -> Tensor<Self>;
+	fn inv_jacobian(p: &Point<Self>) -> GenericTensor<T, (Up, Down)>;
 }
