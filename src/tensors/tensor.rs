@@ -128,3 +128,21 @@ impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem,
 pub type Vector<T> = Tensor<T, ContravariantIndex>;
 pub type Covector<T> = Tensor<T, CovariantIndex>;
 pub type Matrix<T> = Tensor<T, (ContravariantIndex, CovariantIndex)>;
+
+#[cfg(test)]
+mod test {
+	use typenum::consts::U4;
+	use coordinates::CoordinateSystem;
+	use super::{Vector, Matrix};
+
+	struct Test;
+	impl CoordinateSystem for Test {
+		type Dimension = U4;
+	}
+
+	#[test]
+	fn test_ranks() {
+		assert_eq!(Vector::<Test>::get_rank(), 1);
+		assert_eq!(Matrix::<Test>::get_rank(), 2);
+	}
+}
