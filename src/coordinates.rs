@@ -64,6 +64,16 @@ impl<T> IndexMut<usize> for Point<T> where T: CoordinateSystem
     }
 }
 
+impl<T> PartialEq<Point<T>> for Point<T>
+    where T: CoordinateSystem
+{
+    fn eq(&self, rhs: &Point<T>) -> bool {
+        (0..T::dimension()).all(|i| self[i] == rhs[i])
+    }
+}
+
+impl<T> Eq for Point<T> where T: CoordinateSystem {}
+
 /// Trait used for conversions between different coordinate systems. Implementing ConversionTo<T> for a CoordinateSystem
 /// will allow objects in that system to be converted to the system T (note that T also has to be a CoordinateSystem).
 pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem

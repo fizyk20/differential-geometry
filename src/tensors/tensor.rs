@@ -1,5 +1,6 @@
 use coordinates::{CoordinateSystem, Point};
 use std::ops::{Index, IndexMut};
+use std::ops::{Add, Sub, Mul, Div};
 use typenum::uint::Unsigned;
 use typenum::Pow;
 use generic_array::{GenericArray, ArrayLength};
@@ -48,28 +49,16 @@ impl<T, U> Tensor<T, U>
         &self.p
     }
 
-    /// Returns a reference to a coordinate of the tensor, at indices specified by the slice.
+    /// Converts a set of tensor indices passed as a slice into a single index for the internal array.
     /// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
-    pub fn get_coord(&self, i: &[usize]) -> &f64 {
+    pub fn get_coord(i: &[usize]) -> usize {
         assert_eq!(i.len(), U::rank());
         let dim = T::dimension();
         let index = i.into_iter().fold(0, |res, idx| {
             assert!(*idx < dim);
             res * dim + idx
         });
-        &self.x[index]
-    }
-
-    /// Returns a mutable reference to a coordinate of the tensor, at indices specified by the slice.
-    /// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
-    pub fn get_coord_mut(&mut self, i: &[usize]) -> &mut f64 {
-        assert_eq!(i.len(), U::rank());
-        let dim = T::dimension();
-        let index = i.into_iter().fold(0, |res, idx| {
-            assert!(*idx < dim);
-            res * dim + idx
-        });
-        &mut self.x[index]
+        index
     }
 
     /// Returns the variance of the tensor, that is, the list of the index types.
@@ -105,7 +94,7 @@ impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U>
     type Output = f64;
 
     fn index(&self, idx: &'a [usize]) -> &f64 {
-        self.get_coord(idx)
+        &self.x[Self::get_coord(idx)]
     }
 }
 
@@ -116,10 +105,102 @@ impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U>
           <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
 {
     fn index_mut(&mut self, idx: &'a [usize]) -> &mut f64 {
-        self.get_coord_mut(idx)
+        &mut self.x[Self::get_coord(idx)]
+    }
+}
+
+impl<'a, T, U> Index<usize> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = f64;
+
+    fn index(&self, idx: usize) -> &f64 {
+        &self.x[idx]
+    }
+}
+
+impl<'a, T, U> IndexMut<usize> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    fn index_mut(&mut self, idx: usize) -> &mut f64 {
+        &mut self.x[idx]
     }
 }
 
 pub type Vector<T> = Tensor<T, ContravariantIndex>;
 pub type Covector<T> = Tensor<T, CovariantIndex>;
 pub type Matrix<T> = Tensor<T, (ContravariantIndex, CovariantIndex)>;
+
+// Arithmetic operations
+
+impl<T, U> Add<Tensor<T, U>> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = Tensor<T, U>;
+
+    fn add(mut self, rhs: Tensor<T, U>) -> Tensor<T, U> {
+        assert!(self.p == rhs.p);
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            self[i] = self[i] + rhs[i];
+        }
+        self
+    }
+}
+
+impl<T, U> Sub<Tensor<T, U>> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = Tensor<T, U>;
+
+    fn sub(mut self, rhs: Tensor<T, U>) -> Tensor<T, U> {
+        assert!(self.p == rhs.p);
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            self[i] = self[i] - rhs[i];
+        }
+        self
+    }
+}
+
+impl<T, U> Mul<f64> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = Tensor<T, U>;
+
+    fn mul(mut self, rhs: f64) -> Tensor<T, U> {
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            self[i] = self[i] * rhs;
+        }
+        self
+    }
+}
+
+impl<T, U> Div<f64> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = Tensor<T, U>;
+
+    fn div(mut self, rhs: f64) -> Tensor<T, U> {
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            self[i] = self[i] / rhs;
+        }
+        self
+    }
+}
