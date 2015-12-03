@@ -1,6 +1,8 @@
 use std::ops::{Index, IndexMut};
 use super::tensors::{Matrix};
+use typenum::Pow;
 use typenum::uint::Unsigned;
+use typenum::consts::U2;
 use generic_array::{GenericArray, ArrayLength};
 
 /// CoordinateSystem trait marks a struct (usually a unit struct) as representing a coordinate system.
@@ -59,6 +61,8 @@ impl<T> IndexMut<usize> for Point<T> where T: CoordinateSystem {
 /// Trait used for conversions between different coordinate systems. Implementing ConversionTo<T> for a CoordinateSystem
 /// will allow objects in that system to be converted to the system T (note that T also has to be a CoordinateSystem).
 pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
+    where T::Dimension: Pow<U2>,
+          <T::Dimension as Pow<U2>>::Output: ArrayLength<f64>
 {	
 	/// Function converting the coordinates of a point.
 	fn convert_point(p: &Point<Self>) -> Point<T>;
@@ -89,4 +93,5 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
 	
 	/// The inverse matrix of the Jacobian at a point.
 	fn inv_jacobian(p: &Point<Self>) -> Matrix<T>;
+
 }

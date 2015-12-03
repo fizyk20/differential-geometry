@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use typenum::uint::Unsigned;
 use typenum::consts::U1;
 use typenum::Pow;
-use generic_array::{ArrayLength};
+use generic_array::{GenericArray, ArrayLength};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
@@ -61,25 +61,19 @@ impl<T, U> Variance for (T, U)
 
 /// This is a struct that represents a generic tensor
 pub struct Tensor<T: CoordinateSystem, U: Variance>
+    where T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
 {
 	p: Point<T>,
-	x: Vec<f64>,
+	x: GenericArray<f64, <T::Dimension as Pow<U::Rank>>::Output>,
 	phantom: PhantomData<U>
 }
 
-pub trait NCoords {
-    type Output: ArrayLength<f64>;
-}
-
-impl<T, U> NCoords for Tensor<T, U>
+impl<T, U> Tensor<T, U>
     where T: CoordinateSystem, U: Variance,
           T::Dimension: Pow<U::Rank>,
           <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
 {
-    type Output = <T::Dimension as Pow<U::Rank>>::Output;
-}
-
-impl<T, U> Tensor<T, U> where T: CoordinateSystem, U: Variance {
 	
 	/// Returns the point at which the tensor is defined.
 	pub fn get_point(&self) -> &Point<T> {
@@ -112,21 +106,19 @@ impl<T, U> Tensor<T, U> where T: CoordinateSystem, U: Variance {
 	pub fn get_rank() -> usize { U::rank() }
 	
 	pub fn new(point: Point<T>) -> Tensor<T, U> {
-		let len = U::rank();
-		let num_coords = T::dimension().pow(len as u32);
-		let mut coords: Vec<f64> = Vec::with_capacity(num_coords);
-		for _ in 0..num_coords {
-			coords.push(0.0);
-		}
 		Tensor {
 			p: point,
-			x: coords,
+			x: GenericArray::new(),
 			phantom: PhantomData
 		}
 	}
 }
 	
-impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem, U: Variance {
+impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U>
+    where T: CoordinateSystem, U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
 	type Output = f64;
 	
 	fn index(&self, idx: &'a [usize]) -> &f64 {
@@ -134,7 +126,11 @@ impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem, U:
 	}
 }
 
-impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U> where T: CoordinateSystem, U: Variance {
+impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U>
+    where T: CoordinateSystem, U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
 	fn index_mut(&mut self, idx: &'a [usize]) -> &mut f64 {
 		self.get_coord_mut(idx)
 	}
