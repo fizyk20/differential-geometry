@@ -1,6 +1,5 @@
 use coordinates::{CoordinateSystem, Point};
 use std::ops::{Index, IndexMut};
-use std::marker::PhantomData;
 use typenum::uint::Unsigned;
 use typenum::Pow;
 use generic_array::{GenericArray, ArrayLength};
@@ -12,8 +11,7 @@ pub struct Tensor<T: CoordinateSystem, U: Variance>
           <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
 {
     p: Point<T>,
-    x: GenericArray<f64, <T::Dimension as Pow<U::Rank>>::Output>,
-    phantom: PhantomData<U>,
+    x: GenericArray<f64, <T::Dimension as Pow<U::Rank>>::Output>
 }
 
 impl<T, U> Tensor<T, U>
@@ -70,8 +68,7 @@ impl<T, U> Tensor<T, U>
     pub fn new(point: Point<T>) -> Tensor<T, U> {
         Tensor {
             p: point,
-            x: GenericArray::new(),
-            phantom: PhantomData,
+            x: GenericArray::new()
         }
     }
 }
