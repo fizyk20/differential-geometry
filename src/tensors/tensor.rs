@@ -3,6 +3,8 @@ use std::ops::{Index, IndexMut, Add};
 use std::marker::PhantomData;
 use typenum::uint::Unsigned;
 use typenum::consts::U1;
+use typenum::Pow;
+use generic_array::{ArrayLength};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
@@ -58,10 +60,23 @@ impl<T, U> Variance for (T, U)
 }
 
 /// This is a struct that represents a generic tensor
-pub struct Tensor<T: CoordinateSystem, U: Variance> {
+pub struct Tensor<T: CoordinateSystem, U: Variance>
+{
 	p: Point<T>,
 	x: Vec<f64>,
 	phantom: PhantomData<U>
+}
+
+pub trait NCoords {
+    type Output: ArrayLength<f64>;
+}
+
+impl<T, U> NCoords for Tensor<T, U>
+    where T: CoordinateSystem, U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = <T::Dimension as Pow<U::Rank>>::Output;
 }
 
 impl<T, U> Tensor<T, U> where T: CoordinateSystem, U: Variance {
@@ -132,8 +147,9 @@ pub type Matrix<T> = Tensor<T, (ContravariantIndex, CovariantIndex)>;
 #[cfg(test)]
 mod test {
 	use typenum::consts::U4;
+	use typenum::uint::Unsigned;
 	use coordinates::CoordinateSystem;
-	use super::{Vector, Matrix};
+	use super::{Vector, Matrix, NCoords};
 
 	struct Test;
 	impl CoordinateSystem for Test {
@@ -144,5 +160,11 @@ mod test {
 	fn test_ranks() {
 		assert_eq!(Vector::<Test>::get_rank(), 1);
 		assert_eq!(Matrix::<Test>::get_rank(), 2);
+	}
+
+	#[test]
+	fn test_num_coords() {
+		assert_eq!(<Vector<Test> as NCoords>::Output::to_usize(), 4);
+		assert_eq!(<Matrix<Test> as NCoords>::Output::to_usize(), 16);
 	}
 }
