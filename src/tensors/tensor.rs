@@ -14,6 +14,29 @@ pub struct Tensor<T: CoordinateSystem, U: Variance>
     x: GenericArray<f64, <T::Dimension as Pow<U::Rank>>::Output>
 }
 
+impl<T, U> Clone for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    fn clone(&self) -> Tensor<T, U> {
+        Tensor {
+            p: self.p.clone(),
+            x: self.x.clone()
+        }
+    }
+}
+
+impl<T, U> Copy for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as ArrayLength<f64>>::ArrayType: Copy,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>,
+          <<T::Dimension as Pow<U::Rank>>::Output as ArrayLength<f64>>::ArrayType: Copy 
+{}
+
 impl<T, U> Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
