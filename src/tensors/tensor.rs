@@ -104,6 +104,9 @@ impl<T, U> Tensor<T, U>
 
 	/// Returns the rank of the tensor
 	pub fn get_rank() -> usize { U::rank() }
+
+    /// Returns the number of coordinates of the tensor
+    pub fn get_num_coords() -> usize { <T::Dimension as Pow<U::Rank>>::Output::to_usize() }
 	
 	pub fn new(point: Point<T>) -> Tensor<T, U> {
 		Tensor {
@@ -143,9 +146,8 @@ pub type Matrix<T> = Tensor<T, (ContravariantIndex, CovariantIndex)>;
 #[cfg(test)]
 mod test {
 	use typenum::consts::U4;
-	use typenum::uint::Unsigned;
 	use coordinates::CoordinateSystem;
-	use super::{Vector, Matrix, NCoords};
+	use super::{Vector, Matrix};
 
 	struct Test;
 	impl CoordinateSystem for Test {
@@ -160,7 +162,7 @@ mod test {
 
 	#[test]
 	fn test_num_coords() {
-		assert_eq!(<Vector<Test> as NCoords>::Output::to_usize(), 4);
-		assert_eq!(<Matrix<Test> as NCoords>::Output::to_usize(), 16);
+		assert_eq!(Vector::<Test>::get_num_coords(), 4);
+		assert_eq!(Matrix::<Test>::get_num_coords(), 16);
 	}
 }
