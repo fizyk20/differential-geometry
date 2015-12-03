@@ -63,3 +63,41 @@ impl<T, U> Variance for (T, U)
         result
     }
 }
+
+pub trait Concat<T> {
+    type Output;
+}
+
+impl<T, U> Concat<U> for T
+    where T: TensorIndex,
+          U: TensorIndex
+{
+    type Output = (T, U);
+}
+
+impl<T, U, V> Concat<V> for (T, U)
+    where T: Variance,
+          U: TensorIndex,
+          V: TensorIndex
+{
+    type Output = ((T, U), V);
+}
+
+impl<T, U, V> Concat<(U, V)> for T
+    where T: TensorIndex + Concat<U>,
+          U: Variance,
+          V: TensorIndex,
+          <T as Concat<U>>::Output: Concat<V>
+{
+    type Output = <<T as Concat<U>>::Output as Concat<V>>::Output;
+}
+
+impl<T, U, V, W> Concat<(V, W)> for (T, U)
+    where T: Variance,
+          U: TensorIndex,
+          (T, U): Concat<V>,
+          V: Variance,
+          W: TensorIndex
+{
+    type Output = (<(T, U) as Concat<V>>::Output, W);
+}
