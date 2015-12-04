@@ -12,7 +12,7 @@ pub enum IndexType {
 }
 
 /// Trait identifying a type as representing a tensor variance. It is implemented for
-/// `CovariantIndex`, `ContravariantIndex` and tuples (Variance, Index).
+/// `CovariantIndex`, `ContravariantIndex` and tuples (Index, Variance).
 pub trait Variance {
     type Rank: Unsigned + Add<U1>;
     fn rank() -> usize {
