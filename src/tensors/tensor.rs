@@ -1,6 +1,6 @@
 use coordinates::{CoordinateSystem, Point};
 use std::ops::{Index, IndexMut};
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
 use typenum::uint::Unsigned;
 use typenum::Pow;
 use generic_array::{GenericArray, ArrayLength};
@@ -133,9 +133,24 @@ impl<'a, T, U> IndexMut<usize> for Tensor<T, U>
     }
 }
 
+pub type Scalar<T> = Tensor<T, ()>;
 pub type Vector<T> = Tensor<T, ContravariantIndex>;
 pub type Covector<T> = Tensor<T, CovariantIndex>;
 pub type Matrix<T> = Tensor<T, (ContravariantIndex, CovariantIndex)>;
+
+impl<T: CoordinateSystem> Deref for Scalar<T> {
+    type Target = f64;
+
+    fn deref(&self) -> &f64 {
+        &self.x[0]
+    }
+}
+
+impl<T: CoordinateSystem> DerefMut for Scalar<T> {
+    fn deref_mut(&mut self) -> &mut f64 {
+        &mut self.x[0]
+    }
+}
 
 // Arithmetic operations
 

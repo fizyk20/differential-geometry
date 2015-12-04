@@ -21,6 +21,14 @@ pub trait Variance {
     fn variance() -> Vec<IndexType>;
 }
 
+impl Variance for () {
+    type Rank = U0;
+
+    fn variance() -> Vec<IndexType> {
+        vec![]
+    }
+}
+
 /// Trait identifying a type as representing a tensor index. It is implemented
 /// for `CovariantIndex` and `ContravariantIndex`.
 pub trait TensorIndex: Variance {
@@ -142,6 +150,37 @@ impl<T, V> Index<U0> for (V, T)
     type Output = V;
 }
 
+/// An operator trait, removing the indicated index from a variance
+pub trait RemoveIndex<T: Unsigned> {
+    type Output;
+}
+
+impl RemoveIndex<U0> for CovariantIndex {
+    type Output = ();
+}
+
+impl RemoveIndex<U0> for ContravariantIndex {
+    type Output = ();
+}
+
+impl<U, V> RemoveIndex<U0> for (U, V)
+    where U: TensorIndex,
+          V: Variance
+{
+    type Output = V;
+}
+
+impl<T, B, U, V> RemoveIndex<UInt<T, B>> for (U, V)
+    where T: Unsigned,
+          B: Bit,
+          U: TensorIndex,
+          UInt<T, B>: Sub<U1>,
+          <UInt<T, B> as Sub<U1>>::Output: Unsigned,
+          V: Variance + RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>
+{
+    type Output = (U, <V as RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>>::Output);
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -183,5 +222,20 @@ mod test {
 
         assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Index<U2>>::Output::index_type(),
             IndexType::Covariant);
+    }
+
+    #[test]
+    fn test_remove() {
+        assert_eq!(<CovariantIndex as RemoveIndex<U0>>::Output::variance(),
+            vec![]);
+
+        assert_eq!(<(CovariantIndex, ContravariantIndex) as RemoveIndex<U0>>::Output::variance(),
+            vec![IndexType::Contravariant]);
+
+        assert_eq!(<(CovariantIndex, ContravariantIndex) as RemoveIndex<U1>>::Output::variance(),
+            vec![IndexType::Covariant]);
+
+        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as RemoveIndex<U1>>::Output::variance(),
+            vec![IndexType::Contravariant, IndexType::Covariant]);
     }
 }
