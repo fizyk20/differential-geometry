@@ -1,6 +1,7 @@
-use std::ops::Add;
-use typenum::uint::Unsigned;
-use typenum::consts::U1;
+use std::ops::{Add, Sub};
+use typenum::uint::{Unsigned, UInt};
+use typenum::bit::Bit;
+use typenum::consts::{U0, U1};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
@@ -10,6 +11,8 @@ pub enum IndexType {
     Contravariant,
 }
 
+/// Trait identifying a type as representing a tensor variance. It is implemented for
+/// `CovariantIndex`, `ContravariantIndex` and tuples (Variance, Index).
 pub trait Variance {
     type Rank: Unsigned + Add<U1>;
     fn rank() -> usize {
@@ -18,10 +21,13 @@ pub trait Variance {
     fn variance() -> Vec<IndexType>;
 }
 
+/// Trait identifying a type as representing a tensor index. It is implemented
+/// for `CovariantIndex` and `ContravariantIndex`.
 pub trait TensorIndex: Variance {
     fn index_type() -> IndexType;
 }
 
+/// Type representing a contravariant (upper) tensor index.
 pub struct ContravariantIndex;
 impl TensorIndex for ContravariantIndex {
     fn index_type() -> IndexType {
@@ -29,6 +35,7 @@ impl TensorIndex for ContravariantIndex {
     }
 }
 
+/// Type representing a covariant (lower) tensor index.
 pub struct CovariantIndex;
 impl TensorIndex for CovariantIndex {
     fn index_type() -> IndexType {
@@ -51,19 +58,20 @@ impl Variance for CovariantIndex {
 }
 
 impl<T, U> Variance for (T, U)
-    where T: Variance,
-          <T::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
-          U: TensorIndex
+    where U: Variance,
+          <U::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          T: TensorIndex
 {
-    type Rank = <T::Rank as Add<U1>>::Output;
+    type Rank = <U::Rank as Add<U1>>::Output;
 
     fn variance() -> Vec<IndexType> {
-        let mut result = T::variance();
-        result.push(U::index_type());
+        let mut result = vec![T::index_type()];
+        result.append(&mut U::variance());
         result
     }
 }
 
+/// Operator trait used for concatenating two variances.
 pub trait Concat<T> {
     type Output;
 }
@@ -76,35 +84,68 @@ impl<T, U> Concat<U> for T
 }
 
 impl<T, U, V> Concat<V> for (T, U)
-    where T: Variance,
-          U: TensorIndex,
-          V: TensorIndex
+    where T: TensorIndex,
+          V: TensorIndex,
+          U: Variance + Concat<V>,
+          <U as Concat<V>>::Output: Variance
 {
-    type Output = ((T, U), V);
+    type Output = (T, <U as Concat<V>>::Output);
 }
 
 impl<T, U, V> Concat<(U, V)> for T
-    where T: TensorIndex + Concat<U>,
-          U: Variance,
-          V: TensorIndex,
-          <T as Concat<U>>::Output: Concat<V>
+    where T: TensorIndex,
+          U: TensorIndex,
+          V: Variance
 {
-    type Output = <<T as Concat<U>>::Output as Concat<V>>::Output;
+    type Output = (T, (U, V));
 }
 
 impl<T, U, V, W> Concat<(V, W)> for (T, U)
-    where T: Variance,
-          U: TensorIndex,
-          (T, U): Concat<V>,
-          V: Variance,
-          W: TensorIndex
+    where T: TensorIndex,
+          U: Variance + Concat<(V, W)>,
+          V: TensorIndex,
+          W: Variance
 {
-    type Output = (<(T, U) as Concat<V>>::Output, W);
+    type Output = (T, <U as Concat<(V, W)>>::Output);
+}
+
+/// Indexing operator trait: Output is equal to the index type at the given position
+///
+/// Warning: Indices are numbered starting from 0!
+pub trait Index<T: Unsigned> {
+    type Output;
+}
+
+impl Index<U0> for CovariantIndex {
+    type Output = CovariantIndex;
+}
+
+impl Index<U0> for ContravariantIndex {
+    type Output = ContravariantIndex;
+}
+
+impl<T, V, U, B> Index<UInt<U, B>> for (V, T)
+    where V: TensorIndex,
+          U: Unsigned,
+          B: Bit,
+          UInt<U, B>: Sub<U1>,
+          <UInt<U, B> as Sub<U1>>::Output: Unsigned,
+          T: Variance + Index<<UInt<U, B> as Sub<U1>>::Output>
+{
+    type Output = <T as Index<<UInt<U, B> as Sub<U1>>::Output>>::Output;
+}
+
+impl<T, V> Index<U0> for (V, T)
+    where V: TensorIndex,
+          T: Variance
+{
+    type Output = V;
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use typenum::consts::{U0, U1, U2};
     
     #[test]
     fn test_variance() {
@@ -124,5 +165,23 @@ mod test {
             
         assert_eq!(<<(ContravariantIndex, CovariantIndex) as Concat<(CovariantIndex, ContravariantIndex)>>::Output as Variance>::variance(),
             vec![IndexType::Contravariant, IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
+    }
+
+    #[test]
+    fn test_index() {
+        assert_eq!(<CovariantIndex as Index<U0>>::Output::index_type(),
+            IndexType::Covariant);
+
+        assert_eq!(<(CovariantIndex, ContravariantIndex) as Index<U0>>::Output::index_type(),
+            IndexType::Covariant);
+
+        assert_eq!(<(CovariantIndex, ContravariantIndex) as Index<U1>>::Output::index_type(),
+            IndexType::Contravariant);
+
+        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Index<U0>>::Output::index_type(),
+            IndexType::Contravariant);
+
+        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Index<U2>>::Output::index_type(),
+            IndexType::Covariant);
     }
 }
