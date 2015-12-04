@@ -2,6 +2,7 @@ use std::ops::{Add, Sub};
 use typenum::uint::{Unsigned, UInt};
 use typenum::bit::Bit;
 use typenum::consts::{U0, U1};
+use typenum::{Cmp, Same, Greater};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
@@ -64,6 +65,21 @@ impl Variance for CovariantIndex {
         vec![IndexType::Covariant]
     }
 }
+
+/// Trait representing the other index type
+pub trait OtherIndex: TensorIndex {
+    type Output: TensorIndex;
+}
+
+impl OtherIndex for CovariantIndex {
+    type Output = ContravariantIndex;
+}
+
+impl OtherIndex for ContravariantIndex {
+    type Output = CovariantIndex;
+}
+
+// Back to implementing Variance
 
 impl<T, U> Variance for (T, U)
     where U: Variance,
@@ -181,6 +197,27 @@ impl<T, B, U, V> RemoveIndex<UInt<T, B>> for (U, V)
     type Output = (U, <V as RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>>::Output);
 }
 
+/// An operator trait representing tensor contraction
+pub trait Contract<Ul: Unsigned, Uh: Unsigned> {
+    type Output;
+}
+
+// this is quite possibly the worst impl I have ever written
+impl<Ul, Uh, V> Contract<Ul, Uh> for V
+    where Ul: Unsigned,
+          Uh: Unsigned + Sub<U1> + Cmp<Ul>,
+          <Uh as Sub<U1>>::Output: Unsigned,
+          <Uh as Cmp<Ul>>::Output: Same<Greater>,
+          V: Index<Ul> + Index<Uh> + RemoveIndex<Ul>,
+          <V as Index<Ul>>::Output: OtherIndex,
+          <V as Index<Uh>>::Output: TensorIndex + Same<<<V as Index<Ul>>::Output as OtherIndex>::Output>,
+          <V as RemoveIndex<Ul>>::Output: RemoveIndex<<Uh as Sub<U1>>::Output>,
+          <<V as RemoveIndex<Ul>>::Output as RemoveIndex<<Uh as Sub<U1>>::Output>>::Output: Variance
+{
+    type Output = <<V as RemoveIndex<Ul>>::Output as RemoveIndex<<Uh as Sub<U1>>::Output>>::Output;
+}
+
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -237,5 +274,20 @@ mod test {
 
         assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as RemoveIndex<U1>>::Output::variance(),
             vec![IndexType::Contravariant, IndexType::Covariant]);
+    }
+
+    #[test]
+    fn test_contract() {
+        assert_eq!(<(CovariantIndex, ContravariantIndex) as Contract<U0, U1>>::Output::variance(),
+            vec![]);
+
+        assert_eq!(<(ContravariantIndex, CovariantIndex) as Contract<U0, U1>>::Output::variance(),
+            vec![]);
+
+        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Contract<U0, U1>>::Output::variance(),
+            vec![IndexType::Covariant]);
+
+        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Contract<U0, U2>>::Output::variance(),
+            vec![IndexType::Covariant]);
     }
 }
