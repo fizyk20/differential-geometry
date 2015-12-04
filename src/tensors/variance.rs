@@ -4,13 +4,21 @@ use typenum::consts::U1;
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum IndexType {
     Covariant,
     Contravariant,
 }
 
-pub trait TensorIndex {
+pub trait Variance {
+    type Rank: Unsigned + Add<U1>;
+    fn rank() -> usize {
+        Self::Rank::to_usize()
+    }
+    fn variance() -> Vec<IndexType>;
+}
+
+pub trait TensorIndex: Variance {
     fn index_type() -> IndexType;
 }
 
@@ -26,14 +34,6 @@ impl TensorIndex for CovariantIndex {
     fn index_type() -> IndexType {
         IndexType::Covariant
     }
-}
-
-pub trait Variance {
-    type Rank: Unsigned + Add<U1>;
-    fn rank() -> usize {
-        Self::Rank::to_usize()
-    }
-    fn variance() -> Vec<IndexType>;
 }
 
 impl Variance for ContravariantIndex {
@@ -100,4 +100,29 @@ impl<T, U, V, W> Concat<(V, W)> for (T, U)
           W: TensorIndex
 {
     type Output = (<(T, U) as Concat<V>>::Output, W);
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    
+    #[test]
+    fn test_variance() {
+        assert_eq!(<(CovariantIndex, ContravariantIndex) as Variance>::variance(), vec![IndexType::Covariant, IndexType::Contravariant]);
+    }
+    
+    #[test]
+    fn test_variance_concat() {
+        assert_eq!(<<CovariantIndex as Concat<ContravariantIndex>>::Output as Variance>::variance(),
+            vec![IndexType::Covariant, IndexType::Contravariant]);
+            
+        assert_eq!(<<(CovariantIndex, CovariantIndex) as Concat<ContravariantIndex>>::Output as Variance>::variance(),
+            vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
+            
+        assert_eq!(<<CovariantIndex as Concat<(CovariantIndex, ContravariantIndex)>>::Output as Variance>::variance(),
+            vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
+            
+        assert_eq!(<<(ContravariantIndex, CovariantIndex) as Concat<(CovariantIndex, ContravariantIndex)>>::Output as Variance>::variance(),
+            vec![IndexType::Contravariant, IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
+    }
 }
