@@ -4,7 +4,7 @@ use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
 use typenum::uint::Unsigned;
 use typenum::Pow;
 use generic_array::{GenericArray, ArrayLength};
-use super::{CovariantIndex, ContravariantIndex, Variance, IndexType};
+use super::{CovariantIndex, ContravariantIndex, Variance, IndexType, Contract};
 
 /// This is a struct that represents a generic tensor
 pub struct Tensor<T: CoordinateSystem, U: Variance>
@@ -72,6 +72,11 @@ impl<U> Iterator for CoordIterator<U>
             return Some(self.cur_coord.clone())
         }
 
+        // handle scalars
+        if self.cur_coord.len() < 1 {
+            return None;
+        }
+        
         let mut i = self.cur_coord.len() - 1;
         loop {
             self.cur_coord[i] += 1;
@@ -296,6 +301,42 @@ impl<T, U> Div<f64> for Tensor<T, U>
             self[i] = self[i] / rhs;
         }
         self
+    }
+}
+
+impl<T, V> Tensor<T, V>
+  where T: CoordinateSystem,
+        V: Variance,
+        T::Dimension: Pow<V::Rank>,
+        <T::Dimension as Pow<V::Rank>>::Output: ArrayLength<f64>
+{
+    pub fn trace<Ul, Uh>(&self) -> Tensor<T, <V as Contract<Ul, Uh>>::Output>
+        where Ul: Unsigned,
+              Uh: Unsigned,
+              V: Contract<Ul, Uh>,
+              <<V as Contract<Ul, Uh>>::Output as Variance>::Rank: ArrayLength<usize>,
+              T::Dimension: Pow<<<V as Contract<Ul, Uh>>::Output as Variance>::Rank>,
+              <T::Dimension as Pow<<<V as Contract<Ul, Uh>>::Output as Variance>::Rank>>::Output: ArrayLength<f64>
+    {
+        let index1 = Ul::to_usize();
+        let index2 = Uh::to_usize();
+
+        let mut result = Tensor::<T, <V as Contract<Ul, Uh>>::Output>::new(self.p.clone());
+
+        for coord in result.iter_coords() {
+            let mut sum = 0.0;
+
+            for i in 0..T::dimension() {
+                let mut vec_coords = coord.to_vec();
+                vec_coords.insert(index1, i);
+                vec_coords.insert(index2, i);
+                sum += self[&*vec_coords];
+            }
+
+            result[&*coord] = sum;
+        }
+
+        result
     }
 }
 

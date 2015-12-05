@@ -1,6 +1,6 @@
-use typenum::consts::{U2, U4};
+use typenum::consts::{U0, U1, U2, U4};
 use coordinates::{CoordinateSystem, Point};
-use tensors::{Vector, Matrix};
+use tensors::{Vector, Matrix, Tensor, ContravariantIndex};
 use generic_array::GenericArray;
 
 struct Test2;
@@ -79,6 +79,21 @@ fn test_sub() {
 
     assert_eq!(result[0], -0.5);
     assert_eq!(result[1], 0.25);
+}
+
+#[test]
+fn test_trace() {
+    let p = Point::new(GenericArray::new());
+    let mut matrix = Matrix::<Test2>::new(p);
+
+    matrix[0] = 1.0;
+    matrix[1] = 3.0;
+    matrix[2] = 0.0;
+    matrix[3] = 3.0;
+
+    let tr = matrix.trace::<U0, U1>();
+
+    assert_eq!(*tr, 4.0);
 }
 
 #[test]

@@ -96,13 +96,14 @@ impl<T, U> Variance for (T, U)
 }
 
 /// Operator trait used for concatenating two variances.
-pub trait Concat<T> {
-    type Output;
+pub trait Concat<T: Variance>: Variance {
+    type Output: Variance;
 }
 
 impl<T, U> Concat<U> for T
     where T: TensorIndex,
-          U: TensorIndex
+          U: TensorIndex,
+          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = (T, U);
 }
@@ -111,7 +112,9 @@ impl<T, U, V> Concat<V> for (T, U)
     where T: TensorIndex,
           V: TensorIndex,
           U: Variance + Concat<V>,
-          <U as Concat<V>>::Output: Variance
+          <U as Concat<V>>::Output: Variance,
+          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          <<<U as Concat<V>>::Output as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = (T, <U as Concat<V>>::Output);
 }
@@ -119,7 +122,10 @@ impl<T, U, V> Concat<V> for (T, U)
 impl<T, U, V> Concat<(U, V)> for T
     where T: TensorIndex,
           U: TensorIndex,
-          V: Variance
+          V: Variance,
+          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          <<V as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          <<<V as Variance>::Rank as Add<U1>>::Output as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = (T, (U, V));
 }
@@ -128,7 +134,10 @@ impl<T, U, V, W> Concat<(V, W)> for (T, U)
     where T: TensorIndex,
           U: Variance + Concat<(V, W)>,
           V: TensorIndex,
-          W: Variance
+          W: Variance,
+          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          <<W as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          <<<U as Concat<(V, W)>>::Output as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = (T, <U as Concat<(V, W)>>::Output);
 }
@@ -136,8 +145,8 @@ impl<T, U, V, W> Concat<(V, W)> for (T, U)
 /// Indexing operator trait: Output is equal to the index type at the given position
 ///
 /// Warning: Indices are numbered starting from 0!
-pub trait Index<T: Unsigned> {
-    type Output;
+pub trait Index<T: Unsigned>: Variance {
+    type Output: TensorIndex;
 }
 
 impl Index<U0> for CovariantIndex {
@@ -154,21 +163,23 @@ impl<T, V, U, B> Index<UInt<U, B>> for (V, T)
           B: Bit,
           UInt<U, B>: Sub<U1>,
           <UInt<U, B> as Sub<U1>>::Output: Unsigned,
-          T: Variance + Index<<UInt<U, B> as Sub<U1>>::Output>
+          T: Variance + Index<<UInt<U, B> as Sub<U1>>::Output>,
+          <<T as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = <T as Index<<UInt<U, B> as Sub<U1>>::Output>>::Output;
 }
 
 impl<T, V> Index<U0> for (V, T)
     where V: TensorIndex,
-          T: Variance
+          T: Variance,
+          <<T as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = V;
 }
 
 /// An operator trait, removing the indicated index from a variance
-pub trait RemoveIndex<T: Unsigned> {
-    type Output;
+pub trait RemoveIndex<T: Unsigned>: Variance {
+    type Output: Variance;
 }
 
 impl RemoveIndex<U0> for CovariantIndex {
@@ -181,7 +192,8 @@ impl RemoveIndex<U0> for ContravariantIndex {
 
 impl<U, V> RemoveIndex<U0> for (U, V)
     where U: TensorIndex,
-          V: Variance
+          V: Variance,
+          <<V as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = V;
 }
@@ -192,14 +204,16 @@ impl<T, B, U, V> RemoveIndex<UInt<T, B>> for (U, V)
           U: TensorIndex,
           UInt<T, B>: Sub<U1>,
           <UInt<T, B> as Sub<U1>>::Output: Unsigned,
-          V: Variance + RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>
+          V: Variance + RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>,
+          <<V as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          <<<V as RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>>::Output as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
 {
     type Output = (U, <V as RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>>::Output);
 }
 
 /// An operator trait representing tensor contraction
-pub trait Contract<Ul: Unsigned, Uh: Unsigned> {
-    type Output;
+pub trait Contract<Ul: Unsigned, Uh: Unsigned>: Variance {
+    type Output: Variance;
 }
 
 // this is quite possibly the worst impl I have ever written
