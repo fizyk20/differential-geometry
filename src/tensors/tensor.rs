@@ -204,6 +204,22 @@ impl<T, U> Mul<f64> for Tensor<T, U>
     }
 }
 
+impl<T, U> Mul<Tensor<T, U>> for f64
+    where T: CoordinateSystem,
+          U: Variance,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = Tensor<T, U>;
+
+    fn mul(self, mut rhs: Tensor<T, U>) -> Tensor<T, U> {
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            rhs[i] = rhs[i] * self;
+        }
+        rhs
+    }
+}
+
 impl<T, U> Div<f64> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
