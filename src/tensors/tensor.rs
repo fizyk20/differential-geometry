@@ -145,7 +145,7 @@ impl<T, U> Tensor<T, U>
 {
     pub fn iter_coords(&self) -> CoordIterator<U> {
         CoordIterator::new(T::dimension())
-    } 
+    }
 }
 
 impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U>
