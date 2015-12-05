@@ -298,3 +298,41 @@ impl<T, U> Div<f64> for Tensor<T, U>
         self
     }
 }
+
+// Tensor multiplication
+
+// For some reason this triggers recursion overflow when tested - to be investigated
+/*impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          V: Variance,
+          U::Rank: ArrayLength<usize>,
+          V::Rank: ArrayLength<usize>,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>,
+          T::Dimension: Pow<V::Rank>,
+          <T::Dimension as Pow<V::Rank>>::Output: ArrayLength<f64>,
+          U: Concat<V>,
+          <U as Concat<V>>::Output: Variance,
+          T::Dimension: Pow<<<U as Concat<V>>::Output as Variance>::Rank>,
+          <T::Dimension as Pow<<<U as Concat<V>>::Output as Variance>::Rank>>::Output: ArrayLength<f64>
+{
+    type Output = Tensor<T, <U as Concat<V>>::Output>;
+
+    fn mul(self, rhs: Tensor<T, V>) -> Tensor<T, <U as Concat<V>>::Output> {
+        assert!(self.p == rhs.p);
+        let mut result = Tensor::new(self.p.clone());
+        for coord1 in self.iter_coords() {
+            for coord2 in rhs.iter_coords() {
+                let mut vec_coord1 = coord1.to_vec();
+                let mut vec_coord2 = coord2.to_vec();
+                vec_coord1.append(&mut vec_coord2);
+                let index: &[usize] = &vec_coord1;
+                let index1: &[usize] = &coord1;
+                let index2: &[usize] = &coord2;
+                result[index] = self[index1] * rhs[index2];
+            }
+        }
+        result
+    }
+}*/
