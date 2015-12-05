@@ -38,6 +38,57 @@ impl<T, U> Copy for Tensor<T, U>
           <<T::Dimension as Pow<U::Rank>>::Output as ArrayLength<f64>>::ArrayType: Copy 
 {}
 
+pub struct CoordIterator<U>
+    where U: Variance,
+          U::Rank: ArrayLength<usize>
+{
+    started: bool,
+    dimension: usize,
+    cur_coord: GenericArray<usize, U::Rank>
+}
+
+impl<U> CoordIterator<U>
+    where U: Variance,
+          U::Rank: ArrayLength<usize>
+{
+    pub fn new(dimension: usize) -> CoordIterator<U> {
+        CoordIterator {
+            started: false,
+            dimension: dimension,
+            cur_coord: GenericArray::new()
+        }
+    }
+}
+
+impl<U> Iterator for CoordIterator<U>
+    where U: Variance,
+          U::Rank: ArrayLength<usize>
+{
+    type Item = GenericArray<usize, U::Rank>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.started {
+            self.started = true;
+            return Some(self.cur_coord.clone())
+        }
+
+        let mut i = self.cur_coord.len() - 1;
+        loop {
+            self.cur_coord[i] += 1;
+            if self.cur_coord[i] < self.dimension {
+                break;
+            }
+            self.cur_coord[i] = 0;
+            if i == 0 {
+                return None;
+            }
+            i -= 1;
+        }
+
+        Some(self.cur_coord.clone())
+    }
+}
+
 impl<T, U> Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
@@ -83,6 +134,18 @@ impl<T, U> Tensor<T, U>
             x: GenericArray::new()
         }
     }
+}
+
+impl<T, U> Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          U::Rank: ArrayLength<usize>,
+          T::Dimension: Pow<U::Rank>,
+          <T::Dimension as Pow<U::Rank>>::Output: ArrayLength<f64>
+{
+    pub fn iter_coords(&self) -> CoordIterator<U> {
+        CoordIterator::new(T::dimension())
+    } 
 }
 
 impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U>
