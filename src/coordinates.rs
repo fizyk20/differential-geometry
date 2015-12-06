@@ -13,8 +13,7 @@ pub trait CoordinateSystem : Sized {
     /// Function returning a small value for purposes of numerical differentiation.
     /// What is considered a small value may depend on the point, hence the parameter.
     /// Returns just 0.01 by default.
-    #[allow(unused_variables)]
-    fn small(x: &Point<Self>) -> f64 {
+    fn small(_: &Point<Self>) -> f64 {
         0.01
     }
 
