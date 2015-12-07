@@ -4,6 +4,9 @@ use typenum::bit::Bit;
 use typenum::consts::{U0, U1};
 use typenum::{Cmp, Same, Greater};
 
+type Add1<T> = <T as Add<U1>>::Output;
+type Sub1<T> = <T as Sub<U1>>::Output;
+
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -83,10 +86,10 @@ impl OtherIndex for ContravariantIndex {
 
 impl<T, U> Variance for (T, U)
     where U: Variance,
-          <U::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
+          Add1<U::Rank>: Unsigned + Add<U1>,
           T: TensorIndex
 {
-    type Rank = <U::Rank as Add<U1>>::Output;
+    type Rank = Add1<U::Rank>;
 
     fn variance() -> Vec<IndexType> {
         let mut result = vec![T::index_type()];
@@ -100,10 +103,12 @@ pub trait Concat<T: Variance>: Variance {
     type Output: Variance;
 }
 
+pub type Joined<T, U> = <T as Concat<U>>::Output;
+
 impl<T, U> Concat<U> for T
     where T: TensorIndex,
           U: TensorIndex,
-          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
+          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>
 {
     type Output = (T, U);
 }
@@ -113,8 +118,8 @@ impl<T, U, V> Concat<V> for (T, U)
           V: TensorIndex,
           U: Variance + Concat<V>,
           <U as Concat<V>>::Output: Variance,
-          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
-          <<<U as Concat<V>>::Output as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
+          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<<Joined<U, V> as Variance>::Rank>: Unsigned + Add<U1>
 {
     type Output = (T, <U as Concat<V>>::Output);
 }
@@ -123,9 +128,9 @@ impl<T, U, V> Concat<(U, V)> for T
     where T: TensorIndex,
           U: TensorIndex,
           V: Variance,
-          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
-          <<V as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
-          <<<V as Variance>::Rank as Add<U1>>::Output as Add<U1>>::Output: Unsigned + Add<U1>
+          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<<V as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<Add1<<V as Variance>::Rank>>: Unsigned + Add<U1>
 {
     type Output = (T, (U, V));
 }
@@ -135,11 +140,11 @@ impl<T, U, V, W> Concat<(V, W)> for (T, U)
           U: Variance + Concat<(V, W)>,
           V: TensorIndex,
           W: Variance,
-          <<U as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
-          <<W as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
-          <<<U as Concat<(V, W)>>::Output as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
+          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<<W as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<<Joined<U, (V, W)> as Variance>::Rank>: Unsigned + Add<U1>
 {
-    type Output = (T, <U as Concat<(V, W)>>::Output);
+    type Output = (T, Joined<U, (V, W)>);
 }
 
 /// Indexing operator trait: Output is equal to the index type at the given position
@@ -148,6 +153,8 @@ impl<T, U, V, W> Concat<(V, W)> for (T, U)
 pub trait Index<T: Unsigned>: Variance {
     type Output: TensorIndex;
 }
+
+pub type At<T, U> = <T as Index<U>>::Output;
 
 impl Index<U0> for CovariantIndex {
     type Output = CovariantIndex;
@@ -162,17 +169,17 @@ impl<T, V, U, B> Index<UInt<U, B>> for (V, T)
           U: Unsigned,
           B: Bit,
           UInt<U, B>: Sub<U1>,
-          <UInt<U, B> as Sub<U1>>::Output: Unsigned,
-          T: Variance + Index<<UInt<U, B> as Sub<U1>>::Output>,
-          <<T as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
+          Sub1<UInt<U, B>>: Unsigned,
+          T: Variance + Index<Sub1<UInt<U, B>>>,
+          Add1<<T as Variance>::Rank>: Unsigned + Add<U1>
 {
-    type Output = <T as Index<<UInt<U, B> as Sub<U1>>::Output>>::Output;
+    type Output = At<T, Sub1<UInt<U, B>>>;
 }
 
 impl<T, V> Index<U0> for (V, T)
     where V: TensorIndex,
           T: Variance,
-          <<T as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
+          Add1<<T as Variance>::Rank>: Unsigned + Add<U1>
 {
     type Output = V;
 }
@@ -181,6 +188,8 @@ impl<T, V> Index<U0> for (V, T)
 pub trait RemoveIndex<T: Unsigned>: Variance {
     type Output: Variance;
 }
+
+pub type Removed<T, U> = <T as RemoveIndex<U>>::Output;
 
 impl RemoveIndex<U0> for CovariantIndex {
     type Output = ();
@@ -193,7 +202,7 @@ impl RemoveIndex<U0> for ContravariantIndex {
 impl<U, V> RemoveIndex<U0> for (U, V)
     where U: TensorIndex,
           V: Variance,
-          <<V as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
+          Add1<<V as Variance>::Rank>: Unsigned + Add<U1>
 {
     type Output = V;
 }
@@ -203,12 +212,12 @@ impl<T, B, U, V> RemoveIndex<UInt<T, B>> for (U, V)
           B: Bit,
           U: TensorIndex,
           UInt<T, B>: Sub<U1>,
-          <UInt<T, B> as Sub<U1>>::Output: Unsigned,
-          V: Variance + RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>,
-          <<V as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>,
-          <<<V as RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>>::Output as Variance>::Rank as Add<U1>>::Output: Unsigned + Add<U1>
+          Sub1<UInt<T, B>>: Unsigned,
+          V: Variance + RemoveIndex<Sub1<UInt<T, B>>>,
+          Add1<<V as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<<Removed<V, Sub1<UInt<T, B>>> as Variance>::Rank>: Unsigned + Add<U1>
 {
-    type Output = (U, <V as RemoveIndex<<UInt<T, B> as Sub<U1>>::Output>>::Output);
+    type Output = (U, Removed<V, Sub1<UInt<T, B>>>);
 }
 
 /// An operator trait representing tensor contraction
@@ -216,21 +225,22 @@ pub trait Contract<Ul: Unsigned, Uh: Unsigned>: Variance {
     type Output: Variance;
 }
 
+pub type Contracted<V, Ul, Uh> = <V as Contract<Ul, Uh>>::Output;
+
 // this is quite possibly the worst impl I have ever written
 impl<Ul, Uh, V> Contract<Ul, Uh> for V
     where Ul: Unsigned,
           Uh: Unsigned + Sub<U1> + Cmp<Ul>,
-          <Uh as Sub<U1>>::Output: Unsigned,
+          Sub1<Uh>: Unsigned,
           <Uh as Cmp<Ul>>::Output: Same<Greater>,
           V: Index<Ul> + Index<Uh> + RemoveIndex<Ul>,
-          <V as Index<Ul>>::Output: OtherIndex,
-          <V as Index<Uh>>::Output: TensorIndex + Same<<<V as Index<Ul>>::Output as OtherIndex>::Output>,
-          <V as RemoveIndex<Ul>>::Output: RemoveIndex<<Uh as Sub<U1>>::Output>,
-          <<V as RemoveIndex<Ul>>::Output as RemoveIndex<<Uh as Sub<U1>>::Output>>::Output: Variance
+          At<V, Ul>: OtherIndex,
+          At<V, Uh>: Same<<At<V, Ul> as OtherIndex>::Output>,
+          Removed<V, Ul>: RemoveIndex<Sub1<Uh>>,
+          Removed<Removed<V, Ul>, Sub1<Uh>>: Variance
 {
-    type Output = <<V as RemoveIndex<Ul>>::Output as RemoveIndex<<Uh as Sub<U1>>::Output>>::Output;
+    type Output = Removed<Removed<V, Ul>, Sub1<Uh>>;
 }
-
 
 #[cfg(test)]
 mod test {
@@ -244,64 +254,64 @@ mod test {
     
     #[test]
     fn test_variance_concat() {
-        assert_eq!(<<CovariantIndex as Concat<ContravariantIndex>>::Output as Variance>::variance(),
+        assert_eq!(<Joined<CovariantIndex, ContravariantIndex> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Contravariant]);
             
-        assert_eq!(<<(CovariantIndex, CovariantIndex) as Concat<ContravariantIndex>>::Output as Variance>::variance(),
+        assert_eq!(<Joined<(CovariantIndex, CovariantIndex), ContravariantIndex> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
             
-        assert_eq!(<<CovariantIndex as Concat<(CovariantIndex, ContravariantIndex)>>::Output as Variance>::variance(),
+        assert_eq!(<Joined<CovariantIndex, (CovariantIndex, ContravariantIndex)> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
             
-        assert_eq!(<<(ContravariantIndex, CovariantIndex) as Concat<(CovariantIndex, ContravariantIndex)>>::Output as Variance>::variance(),
+        assert_eq!(<Joined<(ContravariantIndex, CovariantIndex), (CovariantIndex, ContravariantIndex)> as Variance>::variance(),
             vec![IndexType::Contravariant, IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
     }
 
     #[test]
     fn test_index() {
-        assert_eq!(<CovariantIndex as Index<U0>>::Output::index_type(),
+        assert_eq!(<At<CovariantIndex, U0> as TensorIndex>::index_type(),
             IndexType::Covariant);
 
-        assert_eq!(<(CovariantIndex, ContravariantIndex) as Index<U0>>::Output::index_type(),
+        assert_eq!(<At<(CovariantIndex, ContravariantIndex), U0> as TensorIndex>::index_type(),
             IndexType::Covariant);
 
-        assert_eq!(<(CovariantIndex, ContravariantIndex) as Index<U1>>::Output::index_type(),
+        assert_eq!(<At<(CovariantIndex, ContravariantIndex), U1> as TensorIndex>::index_type(),
             IndexType::Contravariant);
 
-        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Index<U0>>::Output::index_type(),
+        assert_eq!(<At<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0> as TensorIndex>::index_type(),
             IndexType::Contravariant);
 
-        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Index<U2>>::Output::index_type(),
+        assert_eq!(<At<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U2> as TensorIndex>::index_type(),
             IndexType::Covariant);
     }
 
     #[test]
     fn test_remove() {
-        assert_eq!(<CovariantIndex as RemoveIndex<U0>>::Output::variance(),
+        assert_eq!(<Removed<CovariantIndex, U0> as Variance>::variance(),
             vec![]);
 
-        assert_eq!(<(CovariantIndex, ContravariantIndex) as RemoveIndex<U0>>::Output::variance(),
+        assert_eq!(<Removed<(CovariantIndex, ContravariantIndex), U0> as Variance>::variance(),
             vec![IndexType::Contravariant]);
 
-        assert_eq!(<(CovariantIndex, ContravariantIndex) as RemoveIndex<U1>>::Output::variance(),
+        assert_eq!(<Removed<(CovariantIndex, ContravariantIndex), U1> as Variance>::variance(),
             vec![IndexType::Covariant]);
 
-        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as RemoveIndex<U1>>::Output::variance(),
+        assert_eq!(<Removed<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U1> as Variance>::variance(),
             vec![IndexType::Contravariant, IndexType::Covariant]);
     }
 
     #[test]
     fn test_contract() {
-        assert_eq!(<(CovariantIndex, ContravariantIndex) as Contract<U0, U1>>::Output::variance(),
+        assert_eq!(<Contracted<(CovariantIndex, ContravariantIndex), U0, U1> as Variance>::variance(),
             vec![]);
 
-        assert_eq!(<(ContravariantIndex, CovariantIndex) as Contract<U0, U1>>::Output::variance(),
+        assert_eq!(<Contracted<(ContravariantIndex, CovariantIndex), U0, U1> as Variance>::variance(),
             vec![]);
 
-        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Contract<U0, U1>>::Output::variance(),
+        assert_eq!(<Contracted<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0, U1> as Variance>::variance(),
             vec![IndexType::Covariant]);
 
-        assert_eq!(<(ContravariantIndex, (CovariantIndex, CovariantIndex)) as Contract<U0, U2>>::Output::variance(),
+        assert_eq!(<Contracted<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0, U2> as Variance>::variance(),
             vec![IndexType::Covariant]);
     }
 }
