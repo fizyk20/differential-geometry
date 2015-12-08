@@ -96,6 +96,17 @@ fn test_trace() {
     assert_eq!(*tr, 4.0);
 }
 
+// needed for tests below
+use std::ops::Mul;
+
+#[test]
+fn test_mul_trait() {
+    assert_eq!(<Vector<Test2> as Mul<Vector<Test2>>>::Output::get_rank(), 2);
+    assert_eq!(<Vector<Test2> as Mul<Vector<Test2>>>::Output::get_num_coords(), 4);
+    assert_eq!(<Vector<Test2> as Mul<f64>>::Output::get_rank(), 1);
+    assert_eq!(<Vector<Test2> as Mul<f64>>::Output::get_num_coords(), 2);
+}
+
 #[test]
 fn test_mul_scalar() {
     let p = Point::new(GenericArray::new());
@@ -104,8 +115,34 @@ fn test_mul_scalar() {
     vector1[0] = 1.0;
     vector1[1] = 2.0;
 
-    let result = vector1 * 5.0;
+    // this works
+    let result: Vector<Test2> = <Vector<Test2> as Mul<f64>>::mul(vector1, 5.0);
+    // this doesn't
+    // let result: Vector<Test2> = vector1 * 5.0;
 
     assert_eq!(result[0], 5.0);
     assert_eq!(result[1], 10.0);
+}
+
+#[test]
+fn test_mul_vector() {
+    let p = Point::new(GenericArray::new());
+    let mut vector1 = Vector::<Test2>::new(p);
+    let mut vector2 = Vector::<Test2>::new(p);
+
+    vector1[0] = 1.0;
+    vector1[1] = 2.0;
+
+    vector2[0] = 3.0;
+    vector2[1] = 4.0;
+
+    // this works
+    let result: Tensor<Test2, (ContravariantIndex, ContravariantIndex)> = <Vector<Test2> as Mul<Vector<Test2>>>::mul(vector1, vector2);
+    // this doesn't
+    // let result = vector1 * vector2;
+
+    assert_eq!(result[0], 3.0);
+    assert_eq!(result[1], 4.0);
+    assert_eq!(result[2], 6.0);
+    assert_eq!(result[3], 8.0);
 }

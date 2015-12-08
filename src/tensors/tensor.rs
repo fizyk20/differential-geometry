@@ -4,8 +4,8 @@ use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
 use typenum::uint::Unsigned;
 use typenum::Pow;
 use generic_array::{GenericArray, ArrayLength};
-use super::{CovariantIndex, ContravariantIndex, Variance, IndexType, Contract};
-use super::variance::Contracted;
+use super::{CovariantIndex, ContravariantIndex, Variance, IndexType};
+use super::variance::{Concat, Contract, Joined, Contracted};
 
 pub type Power<T, U> = <T as Pow<U>>::Output;
 
@@ -346,15 +346,14 @@ impl<T, V> Tensor<T, V>
 // Tensor multiplication
 
 // For some reason this triggers recursion overflow when tested - to be investigated
-/*impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
+impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           V: Variance,
           U::Rank: ArrayLength<usize>,
           V::Rank: ArrayLength<usize>,
-          T::Dimension: Pow<U::Rank>,
+          T::Dimension: Pow<U::Rank> + Pow<V::Rank>,
           Power<T::Dimension, U::Rank>: ArrayLength<f64>,
-          T::Dimension: Pow<V::Rank>,
           Power<T::Dimension, V::Rank>: ArrayLength<f64>,
           U: Concat<V>,
           Joined<U, V>: Variance,
@@ -379,4 +378,4 @@ impl<T, V> Tensor<T, V>
         }
         result
     }
-}*/
+}

@@ -128,7 +128,6 @@ impl<T, U, V> Concat<(U, V)> for T
     where T: TensorIndex,
           U: TensorIndex,
           V: Variance,
-          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>,
           Add1<<V as Variance>::Rank>: Unsigned + Add<U1>,
           Add1<Add1<<V as Variance>::Rank>>: Unsigned + Add<U1>
 {
