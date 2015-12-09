@@ -213,8 +213,8 @@ impl<T, B, U, V> RemoveIndex<UInt<T, B>> for (U, V)
           UInt<T, B>: Sub<U1>,
           Sub1<UInt<T, B>>: Unsigned,
           V: Variance + RemoveIndex<Sub1<UInt<T, B>>>,
-          Add1<<V as Variance>::Rank>: Unsigned + Add<U1>,
-          Add1<<Removed<V, Sub1<UInt<T, B>>> as Variance>::Rank>: Unsigned + Add<U1>
+          (U, V): Variance,
+          (U, Removed<V, Sub1<UInt<T, B>>>): Variance
 {
     type Output = (U, Removed<V, Sub1<UInt<T, B>>>);
 }
