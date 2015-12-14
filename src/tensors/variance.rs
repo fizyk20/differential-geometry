@@ -4,8 +4,8 @@ use typenum::bit::Bit;
 use typenum::consts::{U0, U1};
 use typenum::{Cmp, Same, Greater};
 
-type Add1<T> = <T as Add<U1>>::Output;
-type Sub1<T> = <T as Sub<U1>>::Output;
+pub type Add1<T> = <T as Add<U1>>::Output;
+pub type Sub1<T> = <T as Sub<U1>>::Output;
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.

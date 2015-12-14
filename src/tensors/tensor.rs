@@ -2,7 +2,7 @@ use coordinates::{CoordinateSystem, Point};
 use std::ops::{Index, IndexMut};
 use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
 use typenum::uint::Unsigned;
-use typenum::Pow;
+use typenum::{Pow};
 use generic_array::{GenericArray, ArrayLength};
 use super::{CovariantIndex, ContravariantIndex, Variance, IndexType};
 use super::variance::{Concat, Contract, Joined, Contracted};
@@ -97,11 +97,11 @@ impl<U> Iterator for CoordIterator<U>
     }
 }
 
-impl<T, U> Tensor<T, U>
+impl<T, V> Tensor<T, V>
     where T: CoordinateSystem,
-          U: Variance,
-          T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          V: Variance,
+          T::Dimension: Pow<V::Rank>,
+          Power<T::Dimension, V::Rank>: ArrayLength<f64>
 {
     /// Returns the point at which the tensor is defined.
     pub fn get_point(&self) -> &Point<T> {
@@ -111,7 +111,7 @@ impl<T, U> Tensor<T, U>
     /// Converts a set of tensor indices passed as a slice into a single index for the internal array.
     /// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
     pub fn get_coord(i: &[usize]) -> usize {
-        assert_eq!(i.len(), U::rank());
+        assert_eq!(i.len(), V::rank());
         let dim = T::dimension();
         let index = i.into_iter().fold(0, |res, idx| {
             assert!(*idx < dim);
@@ -123,24 +123,53 @@ impl<T, U> Tensor<T, U>
     /// Returns the variance of the tensor, that is, the list of the index types.
     /// A vector would return vec![Contravariant], a metric tensor: vec![Covariant, Covariant].
     pub fn get_variance() -> Vec<IndexType> {
-        U::variance()
+        V::variance()
     }
 
     /// Returns the rank of the tensor
     pub fn get_rank() -> usize {
-        U::rank()
+        V::rank()
     }
 
     /// Returns the number of coordinates of the tensor
     pub fn get_num_coords() -> usize {
-        <T::Dimension as Pow<U::Rank>>::Output::to_usize()
+        <T::Dimension as Pow<V::Rank>>::Output::to_usize()
     }
 
-    pub fn new(point: Point<T>) -> Tensor<T, U> {
+    pub fn new(point: Point<T>) -> Tensor<T, V> {
         Tensor {
             p: point,
             x: GenericArray::new()
         }
+    }
+
+    pub fn trace<Ul, Uh>(&self) -> Tensor<T, Contracted<V, Ul, Uh>>
+        where Ul: Unsigned,
+              Uh: Unsigned,
+              V: Contract<Ul, Uh>,
+              <Contracted<V, Ul, Uh> as Variance>::Rank: ArrayLength<usize>,
+              T::Dimension: Pow<<Contracted<V, Ul, Uh> as Variance>::Rank>,
+              Power<T::Dimension, <Contracted<V, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
+    {
+        let index1 = Ul::to_usize();
+        let index2 = Uh::to_usize();
+
+        let mut result = Tensor::<T, Contracted<V, Ul, Uh>>::new(self.p.clone());
+
+        for coord in result.iter_coords() {
+            let mut sum = 0.0;
+
+            for i in 0..T::dimension() {
+                let mut vec_coords = coord.to_vec();
+                vec_coords.insert(index1, i);
+                vec_coords.insert(index2, i);
+                sum += self[&*vec_coords];
+            }
+
+            result[&*coord] = sum;
+        }
+
+        result
     }
 }
 
@@ -307,42 +336,6 @@ impl<T, U> Div<f64> for Tensor<T, U>
     }
 }
 
-impl<T, V> Tensor<T, V>
-  where T: CoordinateSystem,
-        V: Variance,
-        T::Dimension: Pow<V::Rank>,
-        Power<T::Dimension, V::Rank>: ArrayLength<f64>
-{
-    pub fn trace<Ul, Uh>(&self) -> Tensor<T, Contracted<V, Ul, Uh>>
-        where Ul: Unsigned,
-              Uh: Unsigned,
-              V: Contract<Ul, Uh>,
-              <Contracted<V, Ul, Uh> as Variance>::Rank: ArrayLength<usize>,
-              T::Dimension: Pow<<Contracted<V, Ul, Uh> as Variance>::Rank>,
-              Power<T::Dimension, <Contracted<V, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
-    {
-        let index1 = Ul::to_usize();
-        let index2 = Uh::to_usize();
-
-        let mut result = Tensor::<T, Contracted<V, Ul, Uh>>::new(self.p.clone());
-
-        for coord in result.iter_coords() {
-            let mut sum = 0.0;
-
-            for i in 0..T::dimension() {
-                let mut vec_coords = coord.to_vec();
-                vec_coords.insert(index1, i);
-                vec_coords.insert(index2, i);
-                sum += self[&*vec_coords];
-            }
-
-            result[&*coord] = sum;
-        }
-
-        result
-    }
-}
-
 // Tensor multiplication
 
 // For some reason this triggers recursion overflow when tested - to be investigated
@@ -376,6 +369,49 @@ impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
                 result[index] = self[index1] * rhs[index2];
             }
         }
+        result
+    }
+}
+
+pub trait InnerProduct<Rhs, Ul: Unsigned, Uh: Unsigned> {
+    type Output;
+
+    fn inner_product(self, rhs: Rhs) -> Self::Output;
+}
+
+impl<T, U, V, Ul, Uh> InnerProduct<Tensor<T, V>, Ul, Uh> for Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          V: Variance,
+          Ul: Unsigned,
+          Uh: Unsigned,
+          T::Dimension: Pow<U::Rank> + Pow<V::Rank>,
+          Power<T::Dimension, U::Rank>: ArrayLength<f64>,
+          Power<T::Dimension, V::Rank>: ArrayLength<f64>,
+          U: Concat<V>,
+          Joined<U,V>: Contract<Ul, Uh>,
+          <Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank: ArrayLength<usize>,
+          T::Dimension: Pow<<Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank>,
+          Power<T::Dimension, <Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
+{
+    type Output = Tensor<T, Contracted<Joined<U, V>, Ul, Uh>>;
+
+    fn inner_product(self, rhs: Tensor<T, V>) -> Tensor<T, Contracted<Joined<U, V>, Ul, Uh>> {
+        assert!(self.p == rhs.p);
+        let mut result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::new(self.p.clone());
+
+        for coord_res in result.iter_coords() {
+            let mut sum = 0.0;
+            for i in 0..T::dimension() {
+                let mut coords = coord_res.to_vec();
+                coords.insert(Ul::to_usize(), i);
+                coords.insert(Uh::to_usize(), i);
+                let (coords1, coords2) = coords.split_at(U::Rank::to_usize());
+                sum += self[coords1]*rhs[coords2];
+            }
+            result[&*coord_res] = sum;
+        }
+
         result
     }
 }

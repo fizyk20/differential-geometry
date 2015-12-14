@@ -4,4 +4,4 @@ mod variance;
 
 pub use self::variance::{IndexType, ContravariantIndex, CovariantIndex, TensorIndex,
                        Variance, Concat, Contract};
-pub use self::tensor::{Tensor, Vector, Covector, Matrix};
+pub use self::tensor::{Tensor, Vector, Covector, Matrix, InnerProduct};

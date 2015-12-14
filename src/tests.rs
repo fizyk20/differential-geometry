@@ -1,6 +1,6 @@
 use typenum::consts::{U0, U1, U2, U4};
 use coordinates::{CoordinateSystem, Point};
-use tensors::{Vector, Matrix, Tensor, ContravariantIndex};
+use tensors::{Vector, Covector, Matrix, Tensor, ContravariantIndex, InnerProduct};
 use generic_array::GenericArray;
 
 struct Test2;
@@ -145,4 +145,21 @@ fn test_mul_vector() {
     assert_eq!(result[1], 4.0);
     assert_eq!(result[2], 6.0);
     assert_eq!(result[3], 8.0);
+}
+
+#[test]
+fn test_inner_product() {
+    let p = Point::new(GenericArray::new());
+    let mut vector1 = Vector::<Test2>::new(p);
+    let mut vector2 = Covector::<Test2>::new(p);
+
+    vector1[0] = 1.0;
+    vector1[1] = 2.0;
+
+    vector2[0] = 3.0;
+    vector2[1] = 4.0;
+
+    let result: Tensor<Test2, ()> = <Vector<Test2> as InnerProduct<Covector<Test2>, U0, U1>>::inner_product(vector1, vector2);
+
+    assert_eq!(*result, 11.0);
 }
