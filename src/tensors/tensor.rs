@@ -2,10 +2,11 @@ use coordinates::{CoordinateSystem, Point};
 use std::ops::{Index, IndexMut};
 use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
 use typenum::uint::Unsigned;
+use typenum::consts::U1;
 use typenum::{Pow};
 use generic_array::{GenericArray, ArrayLength};
-use super::{CovariantIndex, ContravariantIndex, Variance, IndexType};
-use super::variance::{Concat, Contract, Joined, Contracted};
+use super::{CovariantIndex, ContravariantIndex, TensorIndex, Variance, IndexType};
+use super::variance::{Concat, Contract, Joined, Contracted, Add1, OtherIndex};
 
 pub type Power<T, U> = <T as Pow<U>>::Output;
 
@@ -412,6 +413,54 @@ impl<T, U, V, Ul, Uh> InnerProduct<Tensor<T, V>, Ul, Uh> for Tensor<T, U>
             result[&*coord_res] = sum;
         }
 
+        result
+    }
+}
+
+
+impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
+    where T: CoordinateSystem,
+          Ul: TensorIndex + OtherIndex,
+          Ur: TensorIndex + OtherIndex,
+          Add1<Ul::Rank>: Unsigned + Add<U1>,
+          Add1<Ur::Rank>: Unsigned + Add<U1>,
+          Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<U1>,
+          <(Ul, Ur) as Variance>::Rank: ArrayLength<usize>,
+          T::Dimension: Pow<Add1<Ul::Rank>>,
+          T::Dimension: Pow<Add1<Ur::Rank>>,
+          T::Dimension: Pow<Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>,
+          T::Dimension: Pow<Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>,
+          Power<T::Dimension, Add1<Ul::Rank>>: ArrayLength<f64>,
+          Power<T::Dimension, Add1<Ur::Rank>>: ArrayLength<f64>,
+          Power<T::Dimension, Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>,
+          Power<T::Dimension, Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>
+{
+    pub fn unit(p: Point<T>) -> Tensor<T, (Ul, Ur)> {
+        let mut result = Tensor::<T, (Ul, Ur)>::new(p);
+
+        for i in 0..T::dimension() {
+            let coords: &[usize] = &[i,i];
+            result[coords] = 1.0;
+        }
+
+        result
+    }
+
+    pub fn transpose(&self) -> Tensor<T, (Ur, Ul)> {
+        let mut result = Tensor::<T, (Ur, Ul)>::new(self.p.clone());
+
+        for coords in self.iter_coords() {
+            let coords2: &[usize] = &[coords[1], coords[0]];
+            result[coords2] = self[&*coords];
+        }
+
+        result
+    }
+
+    // TODO
+    pub fn inverse(&self) -> Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)> {
+        let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::new(self.p.clone());
         result
     }
 }
