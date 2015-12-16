@@ -427,8 +427,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
           Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<U1>,
           Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<U1>,
           <(Ul, Ur) as Variance>::Rank: ArrayLength<usize>,
-          T::Dimension: Pow<Add1<Ul::Rank>>,
-          T::Dimension: Pow<Add1<Ur::Rank>>,
+          T::Dimension: Pow<Add1<Ul::Rank>> + Pow<Add1<Ur::Rank>> + ArrayLength<usize>,
           T::Dimension: Pow<Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>,
           T::Dimension: Pow<Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>,
           Power<T::Dimension, Add1<Ul::Rank>>: ArrayLength<f64>,
@@ -458,9 +457,143 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         result
     }
 
-    // TODO
-    pub fn inverse(&self) -> Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)> {
-        let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::new(self.p.clone());
+    fn lu_decompose(&mut self) -> Option<GenericArray<usize, T::Dimension>> {
+        let n = T::dimension();
+        let absmin = 1.0e-30_f64;
+        let mut result = GenericArray::new();
+        let mut row_norm = GenericArray::<f64, T::Dimension>::new();
+
+        let mut max_row = 0;
+
+        for i in 0..n {
+            let mut absmax = 0.0;
+
+            for j in 0..n {
+                let coord: &[usize] = &[i,j];
+                let maxtemp = self[coord].abs();
+                absmax = if maxtemp > absmax { maxtemp } else { absmax };
+            }
+
+            if absmax == 0.0 {
+                return None;
+            }
+
+            row_norm[i] = 1.0 / absmax;
+        }
+
+        for j in 0..n {
+            for i in 0..j {
+                for k in 0..i {
+                    let coord1: &[usize] = &[i, j];
+                    let coord2: &[usize] = &[i, k];
+                    let coord3: &[usize] = &[k, j];
+
+                    self[coord1] -= self[coord2] * self[coord3];
+                }
+            }
+
+            let mut absmax = 0.0;
+
+            for i in j..n {
+                let coord1: &[usize] = &[i, j];
+
+                for k in 0..j {
+                    let coord2: &[usize] = &[i, k];
+                    let coord3: &[usize] = &[k, j];
+
+                    self[coord1] -= self[coord2] * self[coord3];
+                }
+
+                let maxtemp = self[coord1].abs() * row_norm[i];
+
+                if maxtemp > absmax { 
+                    absmax = maxtemp;
+                    max_row = i;
+                }
+            }
+
+            if max_row != j {
+                if (j == n-2) && self[&[j, j+1] as &[usize]] == 0.0 {
+                    max_row = j;
+                }
+                else {
+                    for k in 0..n {
+                        let jk: &[usize] = &[j, k];
+                        let maxrow_k: &[usize] = &[max_row, k];
+                        let maxtemp = self[jk];
+                        self[jk] = self[maxrow_k];
+                        self[maxrow_k] = maxtemp;
+                    }
+
+                    row_norm[max_row] = row_norm[j];
+                }
+            }
+
+            result[j] = max_row;
+
+            let jj: &[usize] = &[j, j];
+
+            if self[jj] == 0.0 {
+                self[jj] = absmin;
+            }
+
+            if j != n-1 {
+                let maxtemp = 1.0 / self[jj];
+                for i in j+1..n {
+                    self[&[i, j] as &[usize]] *= maxtemp;
+                }
+            }
+        }
+
+        Some(result)
+    }
+
+    fn lu_substitution(&self, b: &GenericArray<f64, T::Dimension>, permute: &GenericArray<usize, T::Dimension>)
+        -> GenericArray<f64, T::Dimension>
+    {
+        let mut result = b.clone();
+        let n = T::dimension();
+
+        for i in 0..n {
+            let mut tmp = result[permute[i]];
+            result[permute[i]] = result[i];
+            for j in (0..i).rev() {
+                tmp -= self[&[i, j] as &[usize]] * result[j];
+            }
+            result[i] = tmp;
+        }
+
+        for i in (0..n).rev() {
+            for j in i+1..n {
+                result[i] -= self[&[i, j] as &[usize]] * result[j];
+            }
+            result[i] /= self[&[i, i] as &[usize]];
+        }
+
         result
+    }
+
+    pub fn inverse(&self) -> Option<Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>> {
+        let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::new(self.p.clone());
+
+        let mut tmp = self.clone();
+
+        let permute = match tmp.lu_decompose() {
+            Some(p) => p,
+            None => return None
+        };
+
+        for i in 0..T::dimension() {
+            let mut dxm = GenericArray::<f64, T::Dimension>::new();
+            dxm[i] = 1.0;
+
+            let x = tmp.lu_substitution(&dxm, &permute);
+
+            for k in 0..T::dimension() {
+                result[&[k, i] as &[usize]] = x[k];
+            }
+        }
+
+        Some(result)
     }
 }
