@@ -144,6 +144,14 @@ impl<T, V> Tensor<T, V>
         }
     }
 
+    pub fn from_slice(point: Point<T>, slice: &[f64]) -> Tensor<T, V> {
+        assert_eq!(Tensor::<T, V>::get_num_coords(), slice.len());
+        Tensor {
+            p: point,
+            x: GenericArray::from_slice(slice)
+        }
+    }
+
     pub fn trace<Ul, Uh>(&self) -> Tensor<T, Contracted<V, Ul, Uh>>
         where Ul: Unsigned,
               Uh: Unsigned,
