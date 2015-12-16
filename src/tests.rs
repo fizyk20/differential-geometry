@@ -163,3 +163,42 @@ fn test_inner_product() {
 
     assert_eq!(*result, 11.0);
 }
+
+#[test]
+fn test_transpose() {
+    let p = Point::new(GenericArray::new());
+    let mut matrix = Matrix::<Test2>::new(p);
+
+    matrix[0] = 1.0;
+    matrix[1] = 2.0;
+    matrix[2] = 3.0;
+    matrix[3] = 4.0;
+
+    let result = matrix.transpose();
+
+    assert_eq!(result[0], 1.0);
+    assert_eq!(result[1], 3.0);
+    assert_eq!(result[2], 2.0);
+    assert_eq!(result[3], 4.0);
+}
+
+#[test]
+fn test_inverse() {
+    let p = Point::new(GenericArray::new());
+    let mut matrix = Matrix::<Test2>::new(p);
+
+    matrix[0] = 1.0;
+    matrix[1] = 2.0;
+    matrix[2] = 3.0;
+    matrix[3] = 4.0;
+
+    let result = matrix.inverse().unwrap();
+
+    // unfortunately the inverse matrix calculation isn't perfectly accurate
+    let epsilon = 0.0000001;
+
+    assert!((result[0] + 2.0).abs() < epsilon);
+    assert!((result[1] - 1.0).abs() < epsilon);
+    assert!((result[2] - 1.5).abs() < epsilon);
+    assert!((result[3] + 0.5).abs() < epsilon);
+}
