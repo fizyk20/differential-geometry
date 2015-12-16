@@ -2,6 +2,6 @@
 mod tensor;
 mod variance;
 
-pub use self::variance::{IndexType, ContravariantIndex, CovariantIndex, TensorIndex,
+pub use self::variance::{IndexType, ContravariantIndex, CovariantIndex, TensorIndex, OtherIndex,
                        Variance, Concat, Contract};
 pub use self::tensor::{Tensor, Vector, Covector, Matrix, InnerProduct};

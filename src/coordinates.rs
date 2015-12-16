@@ -1,5 +1,5 @@
 use std::ops::{Index, IndexMut};
-use super::tensors::Matrix;
+use super::tensors::{Matrix, Tensor, CovariantIndex, ContravariantIndex};
 use typenum::Pow;
 use typenum::uint::Unsigned;
 use typenum::consts::U2;
@@ -8,7 +8,7 @@ use generic_array::{GenericArray, ArrayLength};
 /// CoordinateSystem trait marks a struct (usually a unit struct) as representing a coordinate system.
 pub trait CoordinateSystem : Sized {
     /// An associated type representing the dimension of the coordinate system
-	type Dimension: Unsigned + ArrayLength<f64>;
+	type Dimension: Unsigned + ArrayLength<f64> + ArrayLength<usize>;
 
     /// Function returning a small value for purposes of numerical differentiation.
     /// What is considered a small value may depend on the point, hence the parameter.
@@ -107,6 +107,8 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
     }
 
     /// The inverse matrix of the Jacobian at a point.
-    fn inv_jacobian(p: &Point<Self>) -> Matrix<T>;
+    fn inv_jacobian(p: &Point<Self>) -> Tensor<T, (CovariantIndex, ContravariantIndex)> {
+        ConversionTo::<T>::jacobian(p).inverse().unwrap()
+    }
 
 }
