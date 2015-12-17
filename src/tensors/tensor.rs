@@ -1,3 +1,4 @@
+//! This module defines the `Tensor` type and all sorts of operations on it.
 use coordinates::{CoordinateSystem, Point};
 use std::ops::{Index, IndexMut};
 use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
@@ -8,9 +9,20 @@ use generic_array::{GenericArray, ArrayLength};
 use super::{CovariantIndex, ContravariantIndex, TensorIndex, Variance, IndexType};
 use super::variance::{Concat, Contract, Joined, Contracted, Add1, OtherIndex};
 
+/// Helper type for `typenum` powers
 pub type Power<T, U> = <T as Pow<U>>::Output;
 
-/// This is a struct that represents a generic tensor
+/// Struct representing a tensor.
+///
+/// A tensor is anchored at a given point and has coordinates
+/// represented in the system defined by the generic parameter
+/// `T`. The variance of the tensor (meaning its rank and types
+/// of its indices) is defined by `V`. This allows Rust
+/// to decide at compile time whether two tensors are legal
+/// to be added / multiplied / etc. 
+///
+/// It is only OK to perform an operation on two tensors if
+/// they belong to the same coordinate system.
 pub struct Tensor<T: CoordinateSystem, U: Variance>
     where T::Dimension: Pow<U::Rank>,
           Power<T::Dimension, U::Rank>: ArrayLength<f64>
@@ -42,6 +54,7 @@ impl<T, U> Copy for Tensor<T, U>
           <Power<T::Dimension, U::Rank> as ArrayLength<f64>>::ArrayType: Copy 
 {}
 
+/// A struct for iterating over the coordinates of a tensor.
 pub struct CoordIterator<U>
     where U: Variance,
           U::Rank: ArrayLength<usize>
@@ -110,6 +123,7 @@ impl<T, V> Tensor<T, V>
     }
 
     /// Converts a set of tensor indices passed as a slice into a single index for the internal array.
+    ///
     /// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
     pub fn get_coord(i: &[usize]) -> usize {
         assert_eq!(i.len(), V::rank());
@@ -132,11 +146,12 @@ impl<T, V> Tensor<T, V>
         V::rank()
     }
 
-    /// Returns the number of coordinates of the tensor
+    /// Returns the number of coordinates of the tensor (equal to [Dimension]^[Rank])
     pub fn get_num_coords() -> usize {
         <T::Dimension as Pow<V::Rank>>::Output::to_usize()
     }
 
+    /// Creates a new, zero tensor at a given point
     pub fn new(point: Point<T>) -> Tensor<T, V> {
         Tensor {
             p: point,
@@ -144,6 +159,14 @@ impl<T, V> Tensor<T, V>
         }
     }
 
+    /// Creates a tensor at a given point with the coordinates defined by the slice.
+    ///
+    /// The number of elements in the slice must be equal to the number of coordinates
+    /// of the tensor.
+    ///
+    /// One-dimensional slice represents an n-dimensional tensor in such a way, that
+    /// the last index is the one that is changing the most often, i.e. the sequence is
+    /// as follows: (0,0,...,0), (0,0,...,1), (0,0,...,2), ..., (0,0,...,1,0), (0,0,...,1,1), ... etc.
     pub fn from_slice(point: Point<T>, slice: &[f64]) -> Tensor<T, V> {
         assert_eq!(Tensor::<T, V>::get_num_coords(), slice.len());
         Tensor {
@@ -152,6 +175,9 @@ impl<T, V> Tensor<T, V>
         }
     }
 
+    /// Contracts two indices
+    ///
+    /// The indices must be of opposite types. This is checked at compile time.
     pub fn trace<Ul, Uh>(&self) -> Tensor<T, Contracted<V, Ul, Uh>>
         where Ul: Unsigned,
               Uh: Unsigned,
@@ -189,6 +215,7 @@ impl<T, U> Tensor<T, U>
           T::Dimension: Pow<U::Rank>,
           Power<T::Dimension, U::Rank>: ArrayLength<f64>
 {
+    /// Returns an iterator over the coordinates of the tensor.
     pub fn iter_coords(&self) -> CoordIterator<U> {
         CoordIterator::new(T::dimension())
     }
@@ -242,10 +269,25 @@ impl<'a, T, U> IndexMut<usize> for Tensor<T, U>
     }
 }
 
+/// A scalar type, which is a tensor with rank 0.
+///
+/// This is de facto just a number, so it implements `Deref` and `DerefMut` into `f64`.
 pub type Scalar<T> = Tensor<T, ()>;
+
+/// A vector type (rank 1 contravariant tensor)
 pub type Vector<T> = Tensor<T, ContravariantIndex>;
+
+/// A covector type (rank 1 covariant tensor)
 pub type Covector<T> = Tensor<T, CovariantIndex>;
+
+/// A matrix type (rank 2 contravariant-covariant tensor)
 pub type Matrix<T> = Tensor<T, (ContravariantIndex, CovariantIndex)>;
+
+/// A bilinear form type (rank 2 doubly covariant tensor)
+pub type TwoForm<T> = Tensor<T, (CovariantIndex, CovariantIndex)>;
+
+/// A rank 2 doubly contravariant tensor
+pub type InvTwoForm<T> = Tensor<T, (ContravariantIndex, ContravariantIndex)>;
 
 impl<T: CoordinateSystem> Deref for Scalar<T> {
     type Target = f64;
@@ -382,6 +424,12 @@ impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
     }
 }
 
+/// Trait representing the inner product of two tensors.
+///
+/// The inner product is just a multiplication followed by a contraction.
+/// The contraction is defined by type parameters `Ul` and `Uh`. `Ul` has to
+/// be less than `Uh` and the indices at those positions must be of opposite types
+/// (checked at compile time)
 pub trait InnerProduct<Rhs, Ul: Unsigned, Uh: Unsigned> {
     type Output;
 
@@ -443,6 +491,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
           Power<T::Dimension, Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>,
           Power<T::Dimension, Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>
 {
+    /// Returns a unit matrix (1 on the diagonal, 0 everywhere else)
     pub fn unit(p: Point<T>) -> Tensor<T, (Ul, Ur)> {
         let mut result = Tensor::<T, (Ul, Ur)>::new(p);
 
@@ -454,6 +503,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         result
     }
 
+    /// Transposes the matrix
     pub fn transpose(&self) -> Tensor<T, (Ur, Ul)> {
         let mut result = Tensor::<T, (Ur, Ul)>::new(self.p.clone());
 
@@ -465,6 +515,9 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         result
     }
 
+    // Function calculating the LU decomposition of a matrix - found in the internet
+    // The decomposition is done in-place and a permutation vector is returned (or None
+    // if the matrix was singular)
     fn lu_decompose(&mut self) -> Option<GenericArray<usize, T::Dimension>> {
         let n = T::dimension();
         let absmin = 1.0e-30_f64;
@@ -481,7 +534,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
                 let maxtemp = self[coord].abs();
                 absmax = if maxtemp > absmax { maxtemp } else { absmax };
             }
-
+            
             if absmax == 0.0 {
                 return None;
             }
@@ -556,6 +609,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         Some(result)
     }
 
+    // Function solving a linear system of equations (self*x = b) using the LU decomposition
     fn lu_substitution(&self, b: &GenericArray<f64, T::Dimension>, permute: &GenericArray<usize, T::Dimension>)
         -> GenericArray<f64, T::Dimension>
     {
@@ -581,6 +635,10 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         result
     }
 
+    /// Function calculating the inverse of `self` using the LU ddecomposition.
+    ///
+    /// The return value is an `Option`, since `self` may be non-invertible - 
+    /// in such a case, None is returned
     pub fn inverse(&self) -> Option<Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>> {
         let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::new(self.p.clone());
 

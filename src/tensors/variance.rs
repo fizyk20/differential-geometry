@@ -1,3 +1,4 @@
+//! Module defining variances (types of tensors)
 use std::ops::{Add, Sub};
 use typenum::uint::{Unsigned, UInt};
 use typenum::bit::Bit;
@@ -70,6 +71,8 @@ impl Variance for CovariantIndex {
 }
 
 /// Trait representing the other index type
+///
+/// Used for identifying indices that can be contracted
 pub trait OtherIndex: TensorIndex {
     type Output: TensorIndex;
 }
@@ -99,10 +102,13 @@ impl<T, U> Variance for (T, U)
 }
 
 /// Operator trait used for concatenating two variances.
+///
+/// Used in tensor outer product.
 pub trait Concat<T: Variance>: Variance {
     type Output: Variance;
 }
 
+/// Helper type for variance concatenation.
 pub type Joined<T, U> = <T as Concat<U>>::Output;
 
 impl<T, U> Concat<U> for T
@@ -153,6 +159,7 @@ pub trait Index<T: Unsigned>: Variance {
     type Output: TensorIndex;
 }
 
+/// Helper type for variance indexing.
 pub type At<T, U> = <T as Index<U>>::Output;
 
 impl Index<U0> for CovariantIndex {
@@ -188,6 +195,7 @@ pub trait RemoveIndex<T: Unsigned>: Variance {
     type Output: Variance;
 }
 
+/// Helper type for index removal
 pub type Removed<T, U> = <T as RemoveIndex<U>>::Output;
 
 impl RemoveIndex<U0> for CovariantIndex {
@@ -220,13 +228,15 @@ impl<T, B, U, V> RemoveIndex<UInt<T, B>> for (U, V)
 }
 
 /// An operator trait representing tensor contraction
+///
+/// Used in tensor inner product
 pub trait Contract<Ul: Unsigned, Uh: Unsigned>: Variance {
     type Output: Variance;
 }
 
+/// Helper type for contraction
 pub type Contracted<V, Ul, Uh> = <V as Contract<Ul, Uh>>::Output;
 
-// this is quite possibly the worst impl I have ever written
 impl<Ul, Uh, V> Contract<Ul, Uh> for V
     where Ul: Unsigned,
           Uh: Unsigned + Sub<U1> + Cmp<Ul>,

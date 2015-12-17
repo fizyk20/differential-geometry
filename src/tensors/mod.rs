@@ -1,7 +1,7 @@
-//! This is a module containing definitions of different tensors
+//! Module containing definitions of tensors and operations on them.
 mod tensor;
 mod variance;
 
 pub use self::variance::{IndexType, ContravariantIndex, CovariantIndex, TensorIndex, OtherIndex,
-                       Variance, Concat, Contract};
-pub use self::tensor::{Tensor, Vector, Covector, Matrix, InnerProduct};
+                       Variance, Concat, Contract, Joined, Contracted};
+pub use self::tensor::{Tensor, Vector, Covector, Matrix, TwoForm, InvTwoForm, InnerProduct};

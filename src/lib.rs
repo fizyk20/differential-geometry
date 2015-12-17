@@ -44,7 +44,7 @@ fn main() {
     }
 
     // Each tensor should be anchored at a point, so let's create one
-    let point = Point::<SomeSystem>::new(GenericArray::from_slice(&[0.0, 0.0]));
+    let point = Point::<SomeSystem>::from_slice(&[0.0, 0.0]);
 
     // A vector can be defined like that:
     let vector = Vector::<SomeSystem>::from_slice(point, &[1.0, 2.0]);

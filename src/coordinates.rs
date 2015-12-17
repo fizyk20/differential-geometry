@@ -1,3 +1,4 @@
+//! Module containing basic types representing coordinate systems.
 use std::ops::{Index, IndexMut};
 use super::tensors::{Matrix, Tensor, CovariantIndex, ContravariantIndex};
 use typenum::Pow;
@@ -5,7 +6,7 @@ use typenum::uint::Unsigned;
 use typenum::consts::U2;
 use generic_array::{GenericArray, ArrayLength};
 
-/// CoordinateSystem trait marks a struct (usually a unit struct) as representing a coordinate system.
+/// `CoordinateSystem` marks a struct (usually a unit struct) as representing a coordinate system.
 pub trait CoordinateSystem : Sized {
     /// An associated type representing the dimension of the coordinate system
 	type Dimension: Unsigned + ArrayLength<f64> + ArrayLength<usize>;
@@ -24,7 +25,7 @@ pub trait CoordinateSystem : Sized {
 }
 
 /// Struct representing a point on the manifold. The information about the coordinate system is saved in the type parameter,
-/// so that only operations on objects in one coordinate system will be allowed.
+/// so that only operations on objects belonging to the same coordinate system will be allowed.
 pub struct Point<T: CoordinateSystem> {
     /// The coordinates of the point.
     x: GenericArray<f64, T::Dimension>,
@@ -32,9 +33,14 @@ pub struct Point<T: CoordinateSystem> {
 
 impl<T> Point<T> where T: CoordinateSystem
 {
-    /// Creates a new point with coordinates described by the slice.
+    /// Creates a new point with coordinates described by the array
     pub fn new(coords: GenericArray<f64, T::Dimension>) -> Point<T> {
         Point { x: coords }
+    }
+    
+    /// Creates a new point with coordinates passed in the slice
+    pub fn from_slice(coords: &[f64]) -> Point<T> {
+        Point { x: GenericArray::from_slice(coords) }
     }
 }
 
@@ -73,8 +79,8 @@ impl<T> PartialEq<Point<T>> for Point<T>
 
 impl<T> Eq for Point<T> where T: CoordinateSystem {}
 
-/// Trait used for conversions between different coordinate systems. Implementing ConversionTo<T> for a CoordinateSystem
-/// will allow objects in that system to be converted to the system T (note that T also has to be a CoordinateSystem).
+/// Trait used for conversions between different coordinate systems. Implementing `ConversionTo<T>` for a `CoordinateSystem`
+/// will allow objects in that system to be converted to the system `T` (note that `T` also has to be a `CoordinateSystem`).
 pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
     where T::Dimension: Pow<U2>,
           <T::Dimension as Pow<U2>>::Output: ArrayLength<f64>
@@ -83,6 +89,8 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
     fn convert_point(p: &Point<Self>) -> Point<T>;
 
     /// Function calculating a Jacobian at a point - that is, the matrix of derivatives of the coordinate conversions.
+    ///
+    /// This will be contracted with contravariant indices in the tensor.
     fn jacobian(p: &Point<Self>) -> Matrix<T> {
         let d = Self::dimension();
         let mut result = Matrix::new(Self::convert_point(p));
@@ -107,6 +115,8 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
     }
 
     /// The inverse matrix of the Jacobian at a point.
+    ///
+    /// In conversions, it will be contracted with covariant indices.
     fn inv_jacobian(p: &Point<Self>) -> Tensor<T, (CovariantIndex, ContravariantIndex)> {
         ConversionTo::<T>::jacobian(p).inverse().unwrap()
     }
