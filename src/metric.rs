@@ -4,14 +4,25 @@ use typenum::{Pow, Exp};
 use typenum::consts::{U1, U2, U3};
 use generic_array::ArrayLength;
 
+/// Trait representing the metric properties of the coordinate system
 pub trait MetricSystem: CoordinateSystem
 	where <Self as CoordinateSystem>::Dimension: Pow<U2> + Pow<U3>,
 	      Exp<<Self as CoordinateSystem>::Dimension, U2>: ArrayLength<f64>,
 	      Exp<<Self as CoordinateSystem>::Dimension, U3>: ArrayLength<f64>
 {
+    /// Returns the metric tensor at a given point.
     fn g(point: &Point<Self>) -> TwoForm<Self>;
+    
+    /// Returns the inverse metric tensor at a given point.
+    ///
+    /// The default implementation calculates the metric and then inverts it. A direct implementation
+    /// may be desirable for more performance.
     fn inv_g(point: &Point<Self>) -> InvTwoForm<Self> { Self::g(point).inverse().unwrap() }
     
+    /// Returns the partial derivatives of the metric at a given point.
+    ///
+    /// The default implementation calculates them numerically. A direct implementation
+    /// may be desirable for performance.
     fn dg(point: &Point<Self>) -> Tensor<Self, (CovariantIndex, (CovariantIndex, CovariantIndex))> {
     	let d = Self::dimension();
         let mut result = Tensor::new(point.clone());
@@ -35,6 +46,10 @@ pub trait MetricSystem: CoordinateSystem
     	result
     }
     
+    /// Returns the covariant Christoffel symbols (with three lower indices).
+    ///
+    /// The default implementation calculates them from the metric. A direct implementation
+    /// may be desirable for performance.
     fn covariant_christoffel(point: &Point<Self>) -> Tensor<Self, (CovariantIndex, (CovariantIndex, CovariantIndex))> {
     	let dg = Self::dg(point);
     	let mut result = Tensor::<Self, (CovariantIndex, (CovariantIndex, CovariantIndex))>::new(point.clone());
@@ -46,6 +61,10 @@ pub trait MetricSystem: CoordinateSystem
     	result
     }
 
+	/// Returns the Christoffel symbols.
+	///
+    /// The default implementation calculates them from the metric. A direct implementation
+    /// may be desirable for performance.
     fn christoffel(point: &Point<Self>) -> Tensor<Self, (ContravariantIndex, (CovariantIndex, CovariantIndex))> {
         let ig = Self::inv_g(point);
         let gamma = Self::covariant_christoffel(point);
