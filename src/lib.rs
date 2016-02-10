@@ -69,6 +69,7 @@ extern crate generic_array;
 
 pub mod coordinates;
 pub mod tensors;
+pub mod metric;
 
 #[cfg(test)]
 mod tests;
