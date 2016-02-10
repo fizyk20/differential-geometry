@@ -65,6 +65,7 @@ fn main() {
 ```
 */
 extern crate typenum;
+#[macro_use]
 extern crate generic_array;
 
 pub mod coordinates;

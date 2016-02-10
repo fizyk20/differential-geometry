@@ -1,10 +1,10 @@
 //! This module defines the `Tensor` type and all sorts of operations on it.
-use coordinates::{CoordinateSystem, Point};
+use coordinates::{CoordinateSystem, Point, ConversionTo};
 use std::ops::{Index, IndexMut};
 use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
 use typenum::uint::Unsigned;
-use typenum::consts::U1;
-use typenum::{Pow};
+use typenum::consts::{U1, U2};
+use typenum::{Pow, Same};
 use generic_array::{GenericArray, ArrayLength};
 use super::{CovariantIndex, ContravariantIndex, TensorIndex, Variance, IndexType};
 use super::variance::{Concat, Contract, Joined, Contracted, Add1, OtherIndex};
@@ -661,5 +661,46 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         }
 
         Some(result)
+    }
+}
+
+impl<T, U> Tensor<T, U>
+    where T: CoordinateSystem,
+          U: Variance,
+          U::Rank: ArrayLength<usize>,
+          T::Dimension: Pow<U::Rank>,
+          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+{
+    pub fn convert<T2>(&self) -> Tensor<T2, U>
+    	where T2: CoordinateSystem + 'static,
+    		  T2::Dimension: Pow<U::Rank> + Pow<U2> + Same<T::Dimension>,
+          	  Power<T2::Dimension, U::Rank>: ArrayLength<f64>,
+          	  Power<T2::Dimension, U2>: ArrayLength<f64>,
+          	  T: ConversionTo<T2>
+    		   
+    {
+        let mut result = Tensor::<T2, U>::new(<T as ConversionTo<T2>>::convert_point(&self.p));
+        
+        let jacobian = <T as ConversionTo<T2>>::jacobian(&self.p);
+        let inv_jacobian = <T as ConversionTo<T2>>::inv_jacobian(&self.p);
+        let variance = <U as Variance>::variance();
+        
+        for i in result.iter_coords() {
+            let mut temp = 0.0;
+            for j in self.iter_coords() {
+                let mut temp2 = self[&*j];
+                for (k, v) in variance.iter().enumerate() {
+                    let coords = [i[k], j[k]];
+                    temp2 *= match *v {
+                        IndexType::Covariant => inv_jacobian[&coords[..]],
+                        IndexType::Contravariant => jacobian[&coords[..]]
+                    };
+                }
+                temp += temp2;
+            }
+            result[&*i] = temp;
+        }
+        
+        result
     }
 }
