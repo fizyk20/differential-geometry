@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["coordinates","Module containing basic types representing coordinate systems."],["metric",""],["tensors","Module containing definitions of tensors and operations on them."]]});

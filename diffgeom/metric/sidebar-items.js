@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["MetricSystem","Trait representing the metric properties of the coordinate system"]]});

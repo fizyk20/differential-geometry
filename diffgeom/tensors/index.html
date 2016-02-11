@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `tensors` mod in crate `diffgeom`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, tensors">
+
+    <title>diffgeom::tensors - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>diffgeom</a></p><script>window.sidebarCurrent = {name: 'tensors', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>diffgeom</a>::<wbr><a class='mod' href=''>tensors</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-74' class='srclink' href='../../src/diffgeom/tensors/mod.rs.html#1-7' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Module containing definitions of tensors and operations on them.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.ContravariantIndex.html'
+                               title='diffgeom::tensors::ContravariantIndex'>ContravariantIndex</a></td>
+                        <td class='docblock short'>
+                             <p>Type representing a contravariant (upper) tensor index.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.CovariantIndex.html'
+                               title='diffgeom::tensors::CovariantIndex'>CovariantIndex</a></td>
+                        <td class='docblock short'>
+                             <p>Type representing a covariant (lower) tensor index.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.Tensor.html'
+                               title='diffgeom::tensors::Tensor'>Tensor</a></td>
+                        <td class='docblock short'>
+                             <p>Struct representing a tensor.</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='enum' href='enum.IndexType.html'
+                               title='diffgeom::tensors::IndexType'>IndexType</a></td>
+                        <td class='docblock short'>
+                             <p>This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
+covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.Concat.html'
+                               title='diffgeom::tensors::Concat'>Concat</a></td>
+                        <td class='docblock short'>
+                             <p>Operator trait used for concatenating two variances.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.Contract.html'
+                               title='diffgeom::tensors::Contract'>Contract</a></td>
+                        <td class='docblock short'>
+                             <p>An operator trait representing tensor contraction</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.InnerProduct.html'
+                               title='diffgeom::tensors::InnerProduct'>InnerProduct</a></td>
+                        <td class='docblock short'>
+                             <p>Trait representing the inner product of two tensors.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.OtherIndex.html'
+                               title='diffgeom::tensors::OtherIndex'>OtherIndex</a></td>
+                        <td class='docblock short'>
+                             <p>Trait representing the other index type</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.TensorIndex.html'
+                               title='diffgeom::tensors::TensorIndex'>TensorIndex</a></td>
+                        <td class='docblock short'>
+                             <p>Trait identifying a type as representing a tensor index. It is implemented
+for <code>CovariantIndex</code> and <code>ContravariantIndex</code>.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.Variance.html'
+                               title='diffgeom::tensors::Variance'>Variance</a></td>
+                        <td class='docblock short'>
+                             <p>Trait identifying a type as representing a tensor variance. It is implemented for
+<code>CovariantIndex</code>, <code>ContravariantIndex</code> and tuples (Index, Variance).</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='type' href='type.Contracted.html'
+                               title='diffgeom::tensors::Contracted'>Contracted</a></td>
+                        <td class='docblock short'>
+                             <p>Helper type for contraction</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='type' href='type.Covector.html'
+                               title='diffgeom::tensors::Covector'>Covector</a></td>
+                        <td class='docblock short'>
+                             <p>A covector type (rank 1 covariant tensor)</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='type' href='type.InvTwoForm.html'
+                               title='diffgeom::tensors::InvTwoForm'>InvTwoForm</a></td>
+                        <td class='docblock short'>
+                             <p>A rank 2 doubly contravariant tensor</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='type' href='type.Joined.html'
+                               title='diffgeom::tensors::Joined'>Joined</a></td>
+                        <td class='docblock short'>
+                             <p>Helper type for variance concatenation.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='type' href='type.Matrix.html'
+                               title='diffgeom::tensors::Matrix'>Matrix</a></td>
+                        <td class='docblock short'>
+                             <p>A matrix type (rank 2 contravariant-covariant tensor)</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='type' href='type.TwoForm.html'
+                               title='diffgeom::tensors::TwoForm'>TwoForm</a></td>
+                        <td class='docblock short'>
+                             <p>A bilinear form type (rank 2 doubly covariant tensor)</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='type' href='type.Vector.html'
+                               title='diffgeom::tensors::Vector'>Vector</a></td>
+                        <td class='docblock short'>
+                             <p>A vector type (rank 1 contravariant tensor)</p>
+
+                        </td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "diffgeom";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>
