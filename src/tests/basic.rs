@@ -27,9 +27,9 @@ fn test_num_coords() {
 
 #[test]
 fn test_iter_coords() {
-    let p1 = Point::new(GenericArray::new());
+    let p1 = Point::new(GenericArray::default());
     let matrix1 = Matrix::<Test2>::new(p1);
-    let p2 = Point::new(GenericArray::new());
+    let p2 = Point::new(GenericArray::default());
     let matrix2 = Matrix::<Test4>::new(p2);
 
     let mut i = 0;
@@ -47,7 +47,7 @@ fn test_iter_coords() {
 
 #[test]
 fn test_add() {
-    let p = Point::new(GenericArray::new());
+    let p = Point::new(GenericArray::default());
     let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
     let vector2 = Vector::<Test2>::from_slice(p, &[1.5, 1.6]);
 
@@ -59,7 +59,7 @@ fn test_add() {
 
 #[test]
 fn test_sub() {
-    let p = Point::new(GenericArray::new());
+    let p = Point::new(GenericArray::default());
     let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
     let vector2 = Vector::<Test2>::from_slice(p, &[1.5, 1.75]);
 
@@ -71,10 +71,8 @@ fn test_sub() {
 
 #[test]
 fn test_trace() {
-    let p = Point::new(GenericArray::new());
-    let matrix = Matrix::<Test2>::from_slice(p,
-        &[1.0, 3.0,
-          0.0, 3.0]);
+    let p = Point::new(GenericArray::default());
+    let matrix = Matrix::<Test2>::from_slice(p, &[1.0, 3.0, 0.0, 3.0]);
 
     let tr = matrix.trace::<U0, U1>();
 
@@ -94,7 +92,7 @@ fn test_mul_trait() {
 
 #[test]
 fn test_mul_scalar() {
-    let p = Point::new(GenericArray::new());
+    let p = Point::new(GenericArray::default());
     let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
     // this works
     let result: Vector<Test2> = <Vector<Test2> as Mul<f64>>::mul(vector1, 5.0);
@@ -107,12 +105,13 @@ fn test_mul_scalar() {
 
 #[test]
 fn test_mul_vector() {
-    let p = Point::new(GenericArray::new());
+    let p = Point::new(GenericArray::default());
     let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
     let vector2 = Vector::<Test2>::from_slice(p, &[3.0, 4.0]);
 
     // this works
-    let result: Tensor<Test2, (ContravariantIndex, ContravariantIndex)> = <Vector<Test2> as Mul<Vector<Test2>>>::mul(vector1, vector2);
+    let result: Tensor<Test2, (ContravariantIndex, ContravariantIndex)> =
+        <Vector<Test2> as Mul<Vector<Test2>>>::mul(vector1, vector2);
     // this doesn't
     // let result = vector1 * vector2;
 
@@ -124,7 +123,7 @@ fn test_mul_vector() {
 
 #[test]
 fn test_inner_product() {
-    let p = Point::new(GenericArray::new());
+    let p = Point::new(GenericArray::default());
     let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
     let vector2 = Covector::<Test2>::from_slice(p, &[3.0, 4.0]);
 
@@ -135,10 +134,8 @@ fn test_inner_product() {
 
 #[test]
 fn test_transpose() {
-    let p = Point::new(GenericArray::new());
-    let matrix = Matrix::<Test2>::from_slice(p,
-        &[1.0, 2.0,
-          3.0, 4.0]);
+    let p = Point::new(GenericArray::default());
+    let matrix = Matrix::<Test2>::from_slice(p, &[1.0, 2.0, 3.0, 4.0]);
 
     let result = matrix.transpose();
 
@@ -150,10 +147,8 @@ fn test_transpose() {
 
 #[test]
 fn test_inverse() {
-    let p = Point::new(GenericArray::new());
-    let matrix = Matrix::<Test2>::from_slice(p,
-        &[1.0, 2.0,
-          3.0, 4.0]);
+    let p = Point::new(GenericArray::default());
+    let matrix = Matrix::<Test2>::from_slice(p, &[1.0, 2.0, 3.0, 4.0]);
 
     let result = matrix.inverse().unwrap();
 

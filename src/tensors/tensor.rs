@@ -19,7 +19,7 @@ pub type Power<T, U> = <T as Pow<U>>::Output;
 /// `T`. The variance of the tensor (meaning its rank and types
 /// of its indices) is defined by `V`. This allows Rust
 /// to decide at compile time whether two tensors are legal
-/// to be added / multiplied / etc. 
+/// to be added / multiplied / etc.
 ///
 /// It is only OK to perform an operation on two tensors if
 /// they belong to the same coordinate system.
@@ -28,7 +28,7 @@ pub struct Tensor<T: CoordinateSystem, U: Variance>
           Power<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     p: Point<T>,
-    x: GenericArray<f64, Power<T::Dimension, U::Rank>>
+    x: GenericArray<f64, Power<T::Dimension, U::Rank>>,
 }
 
 impl<T, U> Clone for Tensor<T, U>
@@ -40,7 +40,7 @@ impl<T, U> Clone for Tensor<T, U>
     fn clone(&self) -> Tensor<T, U> {
         Tensor {
             p: self.p.clone(),
-            x: self.x.clone()
+            x: self.x.clone(),
         }
     }
 }
@@ -51,7 +51,7 @@ impl<T, U> Copy for Tensor<T, U>
           T::Dimension: Pow<U::Rank>,
           <T::Dimension as ArrayLength<f64>>::ArrayType: Copy,
           Power<T::Dimension, U::Rank>: ArrayLength<f64>,
-          <Power<T::Dimension, U::Rank> as ArrayLength<f64>>::ArrayType: Copy 
+          <Power<T::Dimension, U::Rank> as ArrayLength<f64>>::ArrayType: Copy
 {}
 
 /// A struct for iterating over the coordinates of a tensor.
@@ -61,7 +61,7 @@ pub struct CoordIterator<U>
 {
     started: bool,
     dimension: usize,
-    cur_coord: GenericArray<usize, U::Rank>
+    cur_coord: GenericArray<usize, U::Rank>,
 }
 
 impl<U> CoordIterator<U>
@@ -72,7 +72,7 @@ impl<U> CoordIterator<U>
         CoordIterator {
             started: false,
             dimension: dimension,
-            cur_coord: GenericArray::new()
+            cur_coord: GenericArray::default(),
         }
     }
 }
@@ -86,14 +86,14 @@ impl<U> Iterator for CoordIterator<U>
     fn next(&mut self) -> Option<Self::Item> {
         if !self.started {
             self.started = true;
-            return Some(self.cur_coord.clone())
+            return Some(self.cur_coord.clone());
         }
 
         // handle scalars
         if self.cur_coord.len() < 1 {
             return None;
         }
-        
+
         let mut i = self.cur_coord.len() - 1;
         loop {
             self.cur_coord[i] += 1;
@@ -124,7 +124,7 @@ impl<T, V> Tensor<T, V>
 
     /// Converts a set of tensor indices passed as a slice into a single index for the internal array.
     ///
-    /// The length of the slice (the number of indices) has to be compatible with the rank of the tensor. 
+    /// The length of the slice (the number of indices) has to be compatible with the rank of the tensor.
     pub fn get_coord(i: &[usize]) -> usize {
         assert_eq!(i.len(), V::rank());
         let dim = T::dimension();
@@ -155,7 +155,7 @@ impl<T, V> Tensor<T, V>
     pub fn new(point: Point<T>) -> Tensor<T, V> {
         Tensor {
             p: point,
-            x: GenericArray::new()
+            x: GenericArray::default(),
         }
     }
 
@@ -171,7 +171,7 @@ impl<T, V> Tensor<T, V>
         assert_eq!(Tensor::<T, V>::get_num_coords(), slice.len());
         Tensor {
             p: point,
-            x: GenericArray::from_slice(slice)
+            x: GenericArray::clone_from_slice(slice),
         }
     }
 
@@ -491,7 +491,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
           Power<T::Dimension, Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>,
           Power<T::Dimension, Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>
 {
-    /// Returns a unit matrix (1 on the diagonal, 0 everywhere else)
+/// Returns a unit matrix (1 on the diagonal, 0 everywhere else)
     pub fn unit(p: Point<T>) -> Tensor<T, (Ul, Ur)> {
         let mut result = Tensor::<T, (Ul, Ur)>::new(p);
 
@@ -503,7 +503,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         result
     }
 
-    /// Transposes the matrix
+/// Transposes the matrix
     pub fn transpose(&self) -> Tensor<T, (Ur, Ul)> {
         let mut result = Tensor::<T, (Ur, Ul)>::new(self.p.clone());
 
@@ -515,14 +515,14 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         result
     }
 
-    // Function calculating the LU decomposition of a matrix - found in the internet
-    // The decomposition is done in-place and a permutation vector is returned (or None
-    // if the matrix was singular)
+// Function calculating the LU decomposition of a matrix - found in the internet
+// The decomposition is done in-place and a permutation vector is returned (or None
+// if the matrix was singular)
     fn lu_decompose(&mut self) -> Option<GenericArray<usize, T::Dimension>> {
         let n = T::dimension();
         let absmin = 1.0e-30_f64;
-        let mut result = GenericArray::new();
-        let mut row_norm = GenericArray::<f64, T::Dimension>::new();
+        let mut result = GenericArray::default();
+        let mut row_norm = GenericArray::<f64, T::Dimension>::default();
 
         let mut max_row = 0;
 
@@ -534,7 +534,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
                 let maxtemp = self[coord].abs();
                 absmax = if maxtemp > absmax { maxtemp } else { absmax };
             }
-            
+
             if absmax == 0.0 {
                 return None;
             }
@@ -567,7 +567,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
 
                 let maxtemp = self[coord1].abs() * row_norm[i];
 
-                if maxtemp > absmax { 
+                if maxtemp > absmax {
                     absmax = maxtemp;
                     max_row = i;
                 }
@@ -609,7 +609,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         Some(result)
     }
 
-    // Function solving a linear system of equations (self*x = b) using the LU decomposition
+// Function solving a linear system of equations (self*x = b) using the LU decomposition
     fn lu_substitution(&self, b: &GenericArray<f64, T::Dimension>, permute: &GenericArray<usize, T::Dimension>)
         -> GenericArray<f64, T::Dimension>
     {
@@ -635,10 +635,10 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         result
     }
 
-    /// Function calculating the inverse of `self` using the LU ddecomposition.
-    ///
-    /// The return value is an `Option`, since `self` may be non-invertible - 
-    /// in such a case, None is returned
+/// Function calculating the inverse of `self` using the LU ddecomposition.
+///
+/// The return value is an `Option`, since `self` may be non-invertible -
+/// in such a case, None is returned
     pub fn inverse(&self) -> Option<Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>> {
         let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::new(self.p.clone());
 
@@ -650,7 +650,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         };
 
         for i in 0..T::dimension() {
-            let mut dxm = GenericArray::<f64, T::Dimension>::new();
+            let mut dxm = GenericArray::<f64, T::Dimension>::default();
             dxm[i] = 1.0;
 
             let x = tmp.lu_substitution(&dxm, &permute);
@@ -672,19 +672,19 @@ impl<T, U> Tensor<T, U>
           Power<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     pub fn convert<T2>(&self) -> Tensor<T2, U>
-    	where T2: CoordinateSystem + 'static,
-    		  T2::Dimension: Pow<U::Rank> + Pow<U2> + Same<T::Dimension>,
-          	  Power<T2::Dimension, U::Rank>: ArrayLength<f64>,
-          	  Power<T2::Dimension, U2>: ArrayLength<f64>,
-          	  T: ConversionTo<T2>
-    		   
+        where T2: CoordinateSystem + 'static,
+              T2::Dimension: Pow<U::Rank> + Pow<U2> + Same<T::Dimension>,
+              Power<T2::Dimension, U::Rank>: ArrayLength<f64>,
+              Power<T2::Dimension, U2>: ArrayLength<f64>,
+              T: ConversionTo<T2>
     {
-        let mut result = Tensor::<T2, U>::new(<T as ConversionTo<T2>>::convert_point(&self.p));
-        
+        let mut result =
+            Tensor::<T2, U>::new(<T as ConversionTo<T2>>::convert_point(&self.p));
+
         let jacobian = <T as ConversionTo<T2>>::jacobian(&self.p);
         let inv_jacobian = <T as ConversionTo<T2>>::inv_jacobian(&self.p);
         let variance = <U as Variance>::variance();
-        
+
         for i in result.iter_coords() {
             let mut temp = 0.0;
             for j in self.iter_coords() {
@@ -693,14 +693,14 @@ impl<T, U> Tensor<T, U>
                     let coords = [i[k], j[k]];
                     temp2 *= match *v {
                         IndexType::Covariant => inv_jacobian[&coords[..]],
-                        IndexType::Contravariant => jacobian[&coords[..]]
+                        IndexType::Contravariant => jacobian[&coords[..]],
                     };
                 }
                 temp += temp2;
             }
             result[&*i] = temp;
         }
-        
+
         result
     }
 }

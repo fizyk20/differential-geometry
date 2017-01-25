@@ -7,9 +7,9 @@ use typenum::consts::U2;
 use generic_array::{GenericArray, ArrayLength};
 
 /// `CoordinateSystem` marks a struct (usually a unit struct) as representing a coordinate system.
-pub trait CoordinateSystem : Sized {
+pub trait CoordinateSystem: Sized {
     /// An associated type representing the dimension of the coordinate system
-	type Dimension: Unsigned + ArrayLength<f64> + ArrayLength<usize>;
+    type Dimension: Unsigned + ArrayLength<f64> + ArrayLength<usize>;
 
     /// Function returning a small value for purposes of numerical differentiation.
     /// What is considered a small value may depend on the point, hence the parameter.
@@ -31,29 +31,36 @@ pub struct Point<T: CoordinateSystem> {
     x: GenericArray<f64, T::Dimension>,
 }
 
-impl<T> Point<T> where T: CoordinateSystem
+impl<T> Point<T>
+    where T: CoordinateSystem
 {
     /// Creates a new point with coordinates described by the array
     pub fn new(coords: GenericArray<f64, T::Dimension>) -> Point<T> {
         Point { x: coords }
     }
-    
+
     /// Creates a new point with coordinates passed in the slice
     pub fn from_slice(coords: &[f64]) -> Point<T> {
-        Point { x: GenericArray::from_slice(coords) }
+        Point { x: GenericArray::clone_from_slice(coords) }
     }
 }
 
-impl<T> Clone for Point<T> where T: CoordinateSystem
+impl<T> Clone for Point<T>
+    where T: CoordinateSystem
 {
     fn clone(&self) -> Point<T> {
         Point::new(self.x.clone())
     }
 }
 
-impl<T> Copy for Point<T> where T: CoordinateSystem, <T::Dimension as ArrayLength<f64>>::ArrayType: Copy {}
+impl<T> Copy for Point<T>
+    where T: CoordinateSystem,
+          <T::Dimension as ArrayLength<f64>>::ArrayType: Copy
+{
+}
 
-impl<T> Index<usize> for Point<T> where T: CoordinateSystem
+impl<T> Index<usize> for Point<T>
+    where T: CoordinateSystem
 {
     type Output = f64;
 
@@ -62,7 +69,8 @@ impl<T> Index<usize> for Point<T> where T: CoordinateSystem
     }
 }
 
-impl<T> IndexMut<usize> for Point<T> where T: CoordinateSystem
+impl<T> IndexMut<usize> for Point<T>
+    where T: CoordinateSystem
 {
     fn index_mut(&mut self, idx: usize) -> &mut f64 {
         &mut self.x[idx]
@@ -81,7 +89,7 @@ impl<T> Eq for Point<T> where T: CoordinateSystem {}
 
 /// Trait used for conversions between different coordinate systems. Implementing `ConversionTo<T>` for a `CoordinateSystem`
 /// will allow objects in that system to be converted to the system `T` (note that `T` also has to be a `CoordinateSystem`).
-pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
+pub trait ConversionTo<T: CoordinateSystem + 'static>: CoordinateSystem
     where T::Dimension: Pow<U2>,
           <T::Dimension as Pow<U2>>::Output: ArrayLength<f64>
 {
@@ -120,5 +128,4 @@ pub trait ConversionTo<T: CoordinateSystem + 'static> : CoordinateSystem
     fn inv_jacobian(p: &Point<Self>) -> Tensor<T, (CovariantIndex, ContravariantIndex)> {
         ConversionTo::<T>::jacobian(p).inverse().unwrap()
     }
-
 }
