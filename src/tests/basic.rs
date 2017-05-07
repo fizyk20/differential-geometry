@@ -28,9 +28,9 @@ fn test_num_coords() {
 #[test]
 fn test_iter_coords() {
     let p1 = Point::new(GenericArray::default());
-    let matrix1 = Matrix::<Test2>::new(p1);
+    let matrix1 = Matrix::<Test2>::zero(p1);
     let p2 = Point::new(GenericArray::default());
-    let matrix2 = Matrix::<Test4>::new(p2);
+    let matrix2 = Matrix::<Test4>::zero(p2);
 
     let mut i = 0;
     for _ in matrix1.iter_coords() {
@@ -85,7 +85,8 @@ use std::ops::Mul;
 #[test]
 fn test_mul_trait() {
     assert_eq!(<Vector<Test2> as Mul<Vector<Test2>>>::Output::get_rank(), 2);
-    assert_eq!(<Vector<Test2> as Mul<Vector<Test2>>>::Output::get_num_coords(), 4);
+    assert_eq!(<Vector<Test2> as Mul<Vector<Test2>>>::Output::get_num_coords(),
+               4);
     assert_eq!(<Vector<Test2> as Mul<f64>>::Output::get_rank(), 1);
     assert_eq!(<Vector<Test2> as Mul<f64>>::Output::get_num_coords(), 2);
 }
@@ -127,7 +128,8 @@ fn test_inner_product() {
     let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
     let vector2 = Covector::<Test2>::from_slice(p, &[3.0, 4.0]);
 
-    let result: Tensor<Test2, ()> = <Vector<Test2> as InnerProduct<Covector<Test2>, U0, U1>>::inner_product(vector1, vector2);
+    let result: Tensor<Test2, ()> =
+        <Vector<Test2> as InnerProduct<Covector<Test2>, U0, U1>>::inner_product(vector1, vector2);
 
     assert_eq!(*result, 11.0);
 }

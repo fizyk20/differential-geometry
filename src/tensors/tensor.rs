@@ -52,7 +52,8 @@ impl<T, U> Copy for Tensor<T, U>
           <T::Dimension as ArrayLength<f64>>::ArrayType: Copy,
           Power<T::Dimension, U::Rank>: ArrayLength<f64>,
           <Power<T::Dimension, U::Rank> as ArrayLength<f64>>::ArrayType: Copy
-{}
+{
+}
 
 /// A struct for iterating over the coordinates of a tensor.
 pub struct CoordIterator<U>
@@ -128,10 +129,11 @@ impl<T, V> Tensor<T, V>
     pub fn get_coord(i: &[usize]) -> usize {
         assert_eq!(i.len(), V::rank());
         let dim = T::dimension();
-        let index = i.into_iter().fold(0, |res, idx| {
-            assert!(*idx < dim);
-            res * dim + idx
-        });
+        let index = i.into_iter()
+            .fold(0, |res, idx| {
+                assert!(*idx < dim);
+                res * dim + idx
+            });
         index
     }
 
@@ -152,10 +154,27 @@ impl<T, V> Tensor<T, V>
     }
 
     /// Creates a new, zero tensor at a given point
-    pub fn new(point: Point<T>) -> Tensor<T, V> {
+    pub fn zero(point: Point<T>) -> Tensor<T, V> {
         Tensor {
             p: point,
             x: GenericArray::default(),
+        }
+    }
+
+    /// Creates a tensor at a given point with the coordinates defined by the array.
+    ///
+    /// The number of elements in the array must be equal to the number of coordinates
+    /// of the tensor.
+    ///
+    /// One-dimensional array represents an n-dimensional tensor in such a way, that
+    /// the last index is the one that is changing the most often, i.e. the sequence is
+    /// as follows: (0,0,...,0), (0,0,...,1), (0,0,...,2), ..., (0,0,...,1,0), (0,0,...,1,1), ... etc.
+    pub fn new(point: Point<T>,
+               coords: GenericArray<f64, Power<T::Dimension, V::Rank>>)
+               -> Tensor<T, V> {
+        Tensor {
+            p: point,
+            x: coords,
         }
     }
 
@@ -189,7 +208,7 @@ impl<T, V> Tensor<T, V>
         let index1 = Ul::to_usize();
         let index2 = Uh::to_usize();
 
-        let mut result = Tensor::<T, Contracted<V, Ul, Uh>>::new(self.p.clone());
+        let mut result = Tensor::<T, Contracted<V, Ul, Uh>>::zero(self.p.clone());
 
         for coord in result.iter_coords() {
             let mut sum = 0.0;
@@ -408,7 +427,7 @@ impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
 
     fn mul(self, rhs: Tensor<T, V>) -> Tensor<T, Joined<U, V>> {
         assert!(self.p == rhs.p);
-        let mut result = Tensor::new(self.p.clone());
+        let mut result = Tensor::zero(self.p.clone());
         for coord1 in self.iter_coords() {
             for coord2 in rhs.iter_coords() {
                 let mut vec_coord1 = coord1.to_vec();
@@ -455,7 +474,7 @@ impl<T, U, V, Ul, Uh> InnerProduct<Tensor<T, V>, Ul, Uh> for Tensor<T, U>
 
     fn inner_product(self, rhs: Tensor<T, V>) -> Tensor<T, Contracted<Joined<U, V>, Ul, Uh>> {
         assert!(self.p == rhs.p);
-        let mut result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::new(self.p.clone());
+        let mut result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::zero(self.p.clone());
 
         for coord_res in result.iter_coords() {
             let mut sum = 0.0;
@@ -493,7 +512,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
 {
 /// Returns a unit matrix (1 on the diagonal, 0 everywhere else)
     pub fn unit(p: Point<T>) -> Tensor<T, (Ul, Ur)> {
-        let mut result = Tensor::<T, (Ul, Ur)>::new(p);
+        let mut result = Tensor::<T, (Ul, Ur)>::zero(p);
 
         for i in 0..T::dimension() {
             let coords: &[usize] = &[i,i];
@@ -505,7 +524,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
 
 /// Transposes the matrix
     pub fn transpose(&self) -> Tensor<T, (Ur, Ul)> {
-        let mut result = Tensor::<T, (Ur, Ul)>::new(self.p.clone());
+        let mut result = Tensor::<T, (Ur, Ul)>::zero(self.p.clone());
 
         for coords in self.iter_coords() {
             let coords2: &[usize] = &[coords[1], coords[0]];
@@ -640,7 +659,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
 /// The return value is an `Option`, since `self` may be non-invertible -
 /// in such a case, None is returned
     pub fn inverse(&self) -> Option<Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>> {
-        let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::new(self.p.clone());
+        let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::zero(self.p.clone());
 
         let mut tmp = self.clone();
 
@@ -678,8 +697,7 @@ impl<T, U> Tensor<T, U>
               Power<T2::Dimension, U2>: ArrayLength<f64>,
               T: ConversionTo<T2>
     {
-        let mut result =
-            Tensor::<T2, U>::new(<T as ConversionTo<T2>>::convert_point(&self.p));
+        let mut result = Tensor::<T2, U>::zero(<T as ConversionTo<T2>>::convert_point(&self.p));
 
         let jacobian = <T as ConversionTo<T2>>::jacobian(&self.p);
         let inv_jacobian = <T as ConversionTo<T2>>::inv_jacobian(&self.p);

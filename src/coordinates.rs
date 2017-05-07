@@ -101,7 +101,7 @@ pub trait ConversionTo<T: CoordinateSystem + 'static>: CoordinateSystem
     /// This will be contracted with contravariant indices in the tensor.
     fn jacobian(p: &Point<Self>) -> Matrix<T> {
         let d = Self::dimension();
-        let mut result = Matrix::new(Self::convert_point(p));
+        let mut result = Matrix::zero(Self::convert_point(p));
         let h = Self::small(p);
 
         for j in 0..d {
