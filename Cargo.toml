@@ -14,4 +14,4 @@ crate-type = ["rlib", "dylib"]
 
 [dependencies]
 typenum = "1.5"
-generic-array = "0.6"
+generic-array = "0.8"
