@@ -48,8 +48,8 @@ fn test_iter_coords() {
 #[test]
 fn test_add() {
     let p = Point::new(GenericArray::default());
-    let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
-    let vector2 = Vector::<Test2>::from_slice(p, &[1.5, 1.6]);
+    let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
+    let vector2 = Vector::<Test2>::new(p, arr![f64; 1.5, 1.6]);
 
     let result = vector1 + vector2;
 
@@ -60,8 +60,8 @@ fn test_add() {
 #[test]
 fn test_sub() {
     let p = Point::new(GenericArray::default());
-    let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
-    let vector2 = Vector::<Test2>::from_slice(p, &[1.5, 1.75]);
+    let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
+    let vector2 = Vector::<Test2>::new(p, arr![f64; 1.5, 1.75]);
 
     let result = vector1 - vector2;
 
@@ -72,7 +72,7 @@ fn test_sub() {
 #[test]
 fn test_trace() {
     let p = Point::new(GenericArray::default());
-    let matrix = Matrix::<Test2>::from_slice(p, &[1.0, 3.0, 0.0, 3.0]);
+    let matrix = Matrix::<Test2>::new(p, arr![f64; 1.0, 3.0, 0.0, 3.0]);
 
     let tr = matrix.trace::<U0, U1>();
 
@@ -94,7 +94,7 @@ fn test_mul_trait() {
 #[test]
 fn test_mul_scalar() {
     let p = Point::new(GenericArray::default());
-    let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
+    let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
     // this works
     let result: Vector<Test2> = <Vector<Test2> as Mul<f64>>::mul(vector1, 5.0);
     // this doesn't
@@ -107,8 +107,8 @@ fn test_mul_scalar() {
 #[test]
 fn test_mul_vector() {
     let p = Point::new(GenericArray::default());
-    let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
-    let vector2 = Vector::<Test2>::from_slice(p, &[3.0, 4.0]);
+    let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
+    let vector2 = Vector::<Test2>::new(p, arr![f64; 3.0, 4.0]);
 
     // this works
     let result: Tensor<Test2, (ContravariantIndex, ContravariantIndex)> =
@@ -125,8 +125,8 @@ fn test_mul_vector() {
 #[test]
 fn test_inner_product() {
     let p = Point::new(GenericArray::default());
-    let vector1 = Vector::<Test2>::from_slice(p, &[1.0, 2.0]);
-    let vector2 = Covector::<Test2>::from_slice(p, &[3.0, 4.0]);
+    let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
+    let vector2 = Covector::<Test2>::new(p, arr![f64; 3.0, 4.0]);
 
     let result: Tensor<Test2, ()> =
         <Vector<Test2> as InnerProduct<Covector<Test2>, U0, U1>>::inner_product(vector1, vector2);
@@ -137,7 +137,7 @@ fn test_inner_product() {
 #[test]
 fn test_transpose() {
     let p = Point::new(GenericArray::default());
-    let matrix = Matrix::<Test2>::from_slice(p, &[1.0, 2.0, 3.0, 4.0]);
+    let matrix = Matrix::<Test2>::new(p, arr![f64; 1.0, 2.0, 3.0, 4.0]);
 
     let result = matrix.transpose();
 
@@ -150,7 +150,7 @@ fn test_transpose() {
 #[test]
 fn test_inverse() {
     let p = Point::new(GenericArray::default());
-    let matrix = Matrix::<Test2>::from_slice(p, &[1.0, 2.0, 3.0, 4.0]);
+    let matrix = Matrix::<Test2>::new(p, arr![f64; 1.0, 2.0, 3.0, 4.0]);
 
     let result = matrix.inverse().unwrap();
 

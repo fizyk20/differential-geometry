@@ -29,6 +29,7 @@ Below you can see a code sample presenting some simple operations.
 ```
 # extern crate diffgeom;
 # extern crate typenum;
+# #[macro_use]
 # extern crate generic_array;
 use std::ops::Mul;
 use generic_array::{GenericArray, ArrayLength};
@@ -44,13 +45,13 @@ fn main() {
     }
 
     // Each tensor should be anchored at a point, so let's create one
-    let point = Point::<SomeSystem>::from_slice(&[0.0, 0.0]);
+    let point = Point::<SomeSystem>::new(arr![f64; 0.0, 0.0]);
 
     // A vector can be defined like that:
-    let vector = Vector::<SomeSystem>::from_slice(point, &[1.0, 2.0]);
+    let vector = Vector::<SomeSystem>::new(point, arr![f64; 1.0, 2.0]);
 
     // There are also covectors
-    let covector = Covector::<SomeSystem>::from_slice(point, &[2.0, 0.5]);
+    let covector = Covector::<SomeSystem>::new(point, arr![f64; 2.0, 0.5]);
 
     // They can be multiplied, yielding a matrix
     let matrix = <Vector<SomeSystem> as Mul<Covector<SomeSystem>>>::mul(vector, covector);

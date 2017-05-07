@@ -255,31 +255,35 @@ impl<Ul, Uh, V> Contract<Ul, Uh> for V
 mod test {
     use super::*;
     use typenum::consts::{U0, U1, U2};
-    
+
     #[test]
     fn test_variance() {
         assert_eq!(<(CovariantIndex, ContravariantIndex) as Variance>::variance(), vec![IndexType::Covariant, IndexType::Contravariant]);
     }
-    
+
     #[test]
     fn test_variance_concat() {
         assert_eq!(<Joined<CovariantIndex, ContravariantIndex> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Contravariant]);
-            
+
         assert_eq!(<Joined<(CovariantIndex, CovariantIndex), ContravariantIndex> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
-            
+
         assert_eq!(<Joined<CovariantIndex, (CovariantIndex, ContravariantIndex)> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
-            
-        assert_eq!(<Joined<(ContravariantIndex, CovariantIndex), (CovariantIndex, ContravariantIndex)> as Variance>::variance(),
-            vec![IndexType::Contravariant, IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
+
+        assert_eq!(<Joined<(ContravariantIndex, CovariantIndex),
+                          (CovariantIndex, ContravariantIndex)> as Variance>::variance(),
+                   vec![IndexType::Contravariant,
+                        IndexType::Covariant,
+                        IndexType::Covariant,
+                        IndexType::Contravariant]);
     }
 
     #[test]
     fn test_index() {
         assert_eq!(<At<CovariantIndex, U0> as TensorIndex>::index_type(),
-            IndexType::Covariant);
+                   IndexType::Covariant);
 
         assert_eq!(<At<(CovariantIndex, ContravariantIndex), U0> as TensorIndex>::index_type(),
             IndexType::Covariant);
@@ -297,7 +301,7 @@ mod test {
     #[test]
     fn test_remove() {
         assert_eq!(<Removed<CovariantIndex, U0> as Variance>::variance(),
-            vec![]);
+                   vec![]);
 
         assert_eq!(<Removed<(CovariantIndex, ContravariantIndex), U0> as Variance>::variance(),
             vec![IndexType::Contravariant]);

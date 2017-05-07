@@ -20,19 +20,17 @@ impl CoordinateSystem for Spherical {
 
 impl ConversionTo<Spherical> for Cartesian {
     fn convert_point(p: &Point<Cartesian>) -> Point<Spherical> {
-        let r = (p[0]*p[0] + p[1]*p[1] + p[2]*p[2]).sqrt();
+        let r = (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).sqrt();
         let theta = (p[2] / r).acos();
         let phi = p[1].atan2(p[0]);
-        Point::new(
-            arr![f64; r, theta, phi]
-        )
+        Point::new(arr![f64; r, theta, phi])
     }
 }
 
 #[test]
 fn test_vector_to_spherical() {
     let p = Point::new(arr![f64; 0.0, 1.0, 1.0]);
-    let v = Vector::<Cartesian>::from_slice(p, &[0.0, 0.0, 1.0]);
+    let v = Vector::<Cartesian>::new(p, arr![f64; 0.0, 0.0, 1.0]);
     let v2: Vector<Spherical> = v.convert();
     assert!((v2[0] - 0.5_f64.sqrt()).abs() < 0.00001);
     assert!((v2[1] + 0.5).abs() < 0.00001);
