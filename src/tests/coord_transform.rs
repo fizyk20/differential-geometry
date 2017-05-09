@@ -1,4 +1,4 @@
-use typenum::consts::{U0, U1, U3};
+use typenum::consts::U3;
 use coordinates::{CoordinateSystem, Point, ConversionTo};
 use tensors::Vector;
 

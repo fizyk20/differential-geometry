@@ -3,14 +3,11 @@ use coordinates::{CoordinateSystem, Point, ConversionTo};
 use std::ops::{Index, IndexMut};
 use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
 use typenum::uint::Unsigned;
-use typenum::consts::{U1, U2};
-use typenum::{Pow, Same};
+use typenum::consts::{U2, B1};
+use typenum::{Pow, Same, Add1, Exp};
 use generic_array::{GenericArray, ArrayLength};
 use super::{CovariantIndex, ContravariantIndex, TensorIndex, Variance, IndexType};
-use super::variance::{Concat, Contract, Joined, Contracted, Add1, OtherIndex};
-
-/// Helper type for `typenum` powers
-pub type Power<T, U> = <T as Pow<U>>::Output;
+use super::variance::{Concat, Contract, Joined, Contracted, OtherIndex};
 
 /// Struct representing a tensor.
 ///
@@ -25,17 +22,17 @@ pub type Power<T, U> = <T as Pow<U>>::Output;
 /// they belong to the same coordinate system.
 pub struct Tensor<T: CoordinateSystem, U: Variance>
     where T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     p: Point<T>,
-    x: GenericArray<f64, Power<T::Dimension, U::Rank>>,
+    x: GenericArray<f64, Exp<T::Dimension, U::Rank>>,
 }
 
 impl<T, U> Clone for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     fn clone(&self) -> Tensor<T, U> {
         Tensor {
@@ -50,8 +47,8 @@ impl<T, U> Copy for Tensor<T, U>
           U: Variance,
           T::Dimension: Pow<U::Rank>,
           <T::Dimension as ArrayLength<f64>>::ArrayType: Copy,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>,
-          <Power<T::Dimension, U::Rank> as ArrayLength<f64>>::ArrayType: Copy
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
+          <Exp<T::Dimension, U::Rank> as ArrayLength<f64>>::ArrayType: Copy
 {
 }
 
@@ -116,7 +113,7 @@ impl<T, V> Tensor<T, V>
     where T: CoordinateSystem,
           V: Variance,
           T::Dimension: Pow<V::Rank>,
-          Power<T::Dimension, V::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, V::Rank>: ArrayLength<f64>
 {
     /// Returns the point at which the tensor is defined.
     pub fn get_point(&self) -> &Point<T> {
@@ -170,7 +167,7 @@ impl<T, V> Tensor<T, V>
     /// the last index is the one that is changing the most often, i.e. the sequence is
     /// as follows: (0,0,...,0), (0,0,...,1), (0,0,...,2), ..., (0,0,...,1,0), (0,0,...,1,1), ... etc.
     pub fn new(point: Point<T>,
-               coords: GenericArray<f64, Power<T::Dimension, V::Rank>>)
+               coords: GenericArray<f64, Exp<T::Dimension, V::Rank>>)
                -> Tensor<T, V> {
         Tensor {
             p: point,
@@ -203,7 +200,7 @@ impl<T, V> Tensor<T, V>
               V: Contract<Ul, Uh>,
               <Contracted<V, Ul, Uh> as Variance>::Rank: ArrayLength<usize>,
               T::Dimension: Pow<<Contracted<V, Ul, Uh> as Variance>::Rank>,
-              Power<T::Dimension, <Contracted<V, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
+              Exp<T::Dimension, <Contracted<V, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
     {
         let index1 = Ul::to_usize();
         let index2 = Uh::to_usize();
@@ -232,7 +229,7 @@ impl<T, U> Tensor<T, U>
           U: Variance,
           U::Rank: ArrayLength<usize>,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     /// Returns an iterator over the coordinates of the tensor.
     pub fn iter_coords(&self) -> CoordIterator<U> {
@@ -244,7 +241,7 @@ impl<'a, T, U> Index<&'a [usize]> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     type Output = f64;
 
@@ -257,7 +254,7 @@ impl<'a, T, U> IndexMut<&'a [usize]> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     fn index_mut(&mut self, idx: &'a [usize]) -> &mut f64 {
         &mut self.x[Self::get_coord(idx)]
@@ -268,7 +265,7 @@ impl<'a, T, U> Index<usize> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     type Output = f64;
 
@@ -281,7 +278,7 @@ impl<'a, T, U> IndexMut<usize> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     fn index_mut(&mut self, idx: usize) -> &mut f64 {
         &mut self.x[idx]
@@ -328,7 +325,7 @@ impl<T, U> Add<Tensor<T, U>> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     type Output = Tensor<T, U>;
 
@@ -345,7 +342,7 @@ impl<T, U> Sub<Tensor<T, U>> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     type Output = Tensor<T, U>;
 
@@ -362,7 +359,7 @@ impl<T, U> Mul<f64> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     type Output = Tensor<T, U>;
 
@@ -378,7 +375,7 @@ impl<T, U> Mul<Tensor<T, U>> for f64
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     type Output = Tensor<T, U>;
 
@@ -394,7 +391,7 @@ impl<T, U> Div<f64> for Tensor<T, U>
     where T: CoordinateSystem,
           U: Variance,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     type Output = Tensor<T, U>;
 
@@ -416,12 +413,12 @@ impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
           U::Rank: ArrayLength<usize>,
           V::Rank: ArrayLength<usize>,
           T::Dimension: Pow<U::Rank> + Pow<V::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>,
-          Power<T::Dimension, V::Rank>: ArrayLength<f64>,
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
+          Exp<T::Dimension, V::Rank>: ArrayLength<f64>,
           U: Concat<V>,
           Joined<U, V>: Variance,
           T::Dimension: Pow<<Joined<U, V> as Variance>::Rank>,
-          Power<T::Dimension, <Joined<U, V> as Variance>::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, <Joined<U, V> as Variance>::Rank>: ArrayLength<f64>
 {
     type Output = Tensor<T, Joined<U, V>>;
 
@@ -462,13 +459,13 @@ impl<T, U, V, Ul, Uh> InnerProduct<Tensor<T, V>, Ul, Uh> for Tensor<T, U>
           Ul: Unsigned,
           Uh: Unsigned,
           T::Dimension: Pow<U::Rank> + Pow<V::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>,
-          Power<T::Dimension, V::Rank>: ArrayLength<f64>,
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
+          Exp<T::Dimension, V::Rank>: ArrayLength<f64>,
           U: Concat<V>,
           Joined<U,V>: Contract<Ul, Uh>,
           <Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank: ArrayLength<usize>,
           T::Dimension: Pow<<Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank>,
-          Power<T::Dimension, <Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, <Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
 {
     type Output = Tensor<T, Contracted<Joined<U, V>, Ul, Uh>>;
 
@@ -497,18 +494,18 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
     where T: CoordinateSystem,
           Ul: TensorIndex + OtherIndex,
           Ur: TensorIndex + OtherIndex,
-          Add1<Ul::Rank>: Unsigned + Add<U1>,
-          Add1<Ur::Rank>: Unsigned + Add<U1>,
-          Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<U1>,
-          Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<U1>,
+          Add1<Ul::Rank>: Unsigned + Add<B1>,
+          Add1<Ur::Rank>: Unsigned + Add<B1>,
+          Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<B1>,
+          Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>: Unsigned + Add<B1>,
           <(Ul, Ur) as Variance>::Rank: ArrayLength<usize>,
           T::Dimension: Pow<Add1<Ul::Rank>> + Pow<Add1<Ur::Rank>> + ArrayLength<usize>,
           T::Dimension: Pow<Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>,
           T::Dimension: Pow<Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>,
-          Power<T::Dimension, Add1<Ul::Rank>>: ArrayLength<f64>,
-          Power<T::Dimension, Add1<Ur::Rank>>: ArrayLength<f64>,
-          Power<T::Dimension, Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>,
-          Power<T::Dimension, Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>
+          Exp<T::Dimension, Add1<Ul::Rank>>: ArrayLength<f64>,
+          Exp<T::Dimension, Add1<Ur::Rank>>: ArrayLength<f64>,
+          Exp<T::Dimension, Add1<<<Ul as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>,
+          Exp<T::Dimension, Add1<<<Ur as OtherIndex>::Output as Variance>::Rank>>: ArrayLength<f64>
 {
 /// Returns a unit matrix (1 on the diagonal, 0 everywhere else)
     pub fn unit(p: Point<T>) -> Tensor<T, (Ul, Ur)> {
@@ -688,13 +685,13 @@ impl<T, U> Tensor<T, U>
           U: Variance,
           U::Rank: ArrayLength<usize>,
           T::Dimension: Pow<U::Rank>,
-          Power<T::Dimension, U::Rank>: ArrayLength<f64>
+          Exp<T::Dimension, U::Rank>: ArrayLength<f64>
 {
     pub fn convert<T2>(&self) -> Tensor<T2, U>
         where T2: CoordinateSystem + 'static,
               T2::Dimension: Pow<U::Rank> + Pow<U2> + Same<T::Dimension>,
-              Power<T2::Dimension, U::Rank>: ArrayLength<f64>,
-              Power<T2::Dimension, U2>: ArrayLength<f64>,
+              Exp<T2::Dimension, U::Rank>: ArrayLength<f64>,
+              Exp<T2::Dimension, U2>: ArrayLength<f64>,
               T: ConversionTo<T2>
     {
         let mut result = Tensor::<T2, U>::zero(<T as ConversionTo<T2>>::convert_point(&self.p));

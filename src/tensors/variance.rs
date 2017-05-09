@@ -2,11 +2,9 @@
 use std::ops::{Add, Sub};
 use typenum::uint::{Unsigned, UInt};
 use typenum::bit::Bit;
-use typenum::consts::{U0, U1};
+use typenum::consts::{U0, U1, B1};
 use typenum::{Cmp, Same, Greater};
-
-pub type Add1<T> = <T as Add<U1>>::Output;
-pub type Sub1<T> = <T as Sub<U1>>::Output;
+use typenum::{Add1, Sub1};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
 /// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
@@ -19,7 +17,7 @@ pub enum IndexType {
 /// Trait identifying a type as representing a tensor variance. It is implemented for
 /// `CovariantIndex`, `ContravariantIndex` and tuples (Index, Variance).
 pub trait Variance {
-    type Rank: Unsigned + Add<U1>;
+    type Rank: Unsigned + Add<B1>;
     fn rank() -> usize {
         Self::Rank::to_usize()
     }
@@ -89,7 +87,7 @@ impl OtherIndex for ContravariantIndex {
 
 impl<T, U> Variance for (T, U)
     where U: Variance,
-          Add1<U::Rank>: Unsigned + Add<U1>,
+          Add1<U::Rank>: Unsigned + Add<B1>,
           T: TensorIndex
 {
     type Rank = Add1<U::Rank>;
@@ -114,7 +112,7 @@ pub type Joined<T, U> = <T as Concat<U>>::Output;
 impl<T, U> Concat<U> for T
     where T: TensorIndex,
           U: TensorIndex,
-          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>
+          Add1<<U as Variance>::Rank>: Unsigned + Add<B1>
 {
     type Output = (T, U);
 }
@@ -124,8 +122,8 @@ impl<T, U, V> Concat<V> for (T, U)
           V: TensorIndex,
           U: Variance + Concat<V>,
           <U as Concat<V>>::Output: Variance,
-          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>,
-          Add1<<Joined<U, V> as Variance>::Rank>: Unsigned + Add<U1>
+          Add1<<U as Variance>::Rank>: Unsigned + Add<B1>,
+          Add1<<Joined<U, V> as Variance>::Rank>: Unsigned + Add<B1>
 {
     type Output = (T, <U as Concat<V>>::Output);
 }
@@ -134,8 +132,8 @@ impl<T, U, V> Concat<(U, V)> for T
     where T: TensorIndex,
           U: TensorIndex,
           V: Variance,
-          Add1<<V as Variance>::Rank>: Unsigned + Add<U1>,
-          Add1<Add1<<V as Variance>::Rank>>: Unsigned + Add<U1>
+          Add1<<V as Variance>::Rank>: Unsigned + Add<B1>,
+          Add1<Add1<<V as Variance>::Rank>>: Unsigned + Add<B1>
 {
     type Output = (T, (U, V));
 }
@@ -145,9 +143,9 @@ impl<T, U, V, W> Concat<(V, W)> for (T, U)
           U: Variance + Concat<(V, W)>,
           V: TensorIndex,
           W: Variance,
-          Add1<<U as Variance>::Rank>: Unsigned + Add<U1>,
-          Add1<<W as Variance>::Rank>: Unsigned + Add<U1>,
-          Add1<<Joined<U, (V, W)> as Variance>::Rank>: Unsigned + Add<U1>
+          Add1<<U as Variance>::Rank>: Unsigned + Add<B1>,
+          Add1<<W as Variance>::Rank>: Unsigned + Add<B1>,
+          Add1<<Joined<U, (V, W)> as Variance>::Rank>: Unsigned + Add<B1>
 {
     type Output = (T, Joined<U, (V, W)>);
 }
@@ -174,10 +172,10 @@ impl<T, V, U, B> Index<UInt<U, B>> for (V, T)
     where V: TensorIndex,
           U: Unsigned,
           B: Bit,
-          UInt<U, B>: Sub<U1>,
+          UInt<U, B>: Sub<B1>,
           Sub1<UInt<U, B>>: Unsigned,
           T: Variance + Index<Sub1<UInt<U, B>>>,
-          Add1<<T as Variance>::Rank>: Unsigned + Add<U1>
+          Add1<<T as Variance>::Rank>: Unsigned + Add<B1>
 {
     type Output = At<T, Sub1<UInt<U, B>>>;
 }
@@ -185,7 +183,7 @@ impl<T, V, U, B> Index<UInt<U, B>> for (V, T)
 impl<T, V> Index<U0> for (V, T)
     where V: TensorIndex,
           T: Variance,
-          Add1<<T as Variance>::Rank>: Unsigned + Add<U1>
+          Add1<<T as Variance>::Rank>: Unsigned + Add<B1>
 {
     type Output = V;
 }
@@ -209,7 +207,7 @@ impl RemoveIndex<U0> for ContravariantIndex {
 impl<U, V> RemoveIndex<U0> for (U, V)
     where U: TensorIndex,
           V: Variance,
-          Add1<<V as Variance>::Rank>: Unsigned + Add<U1>
+          Add1<<V as Variance>::Rank>: Unsigned + Add<B1>
 {
     type Output = V;
 }
@@ -218,7 +216,7 @@ impl<T, B, U, V> RemoveIndex<UInt<T, B>> for (U, V)
     where T: Unsigned,
           B: Bit,
           U: TensorIndex,
-          UInt<T, B>: Sub<U1>,
+          UInt<T, B>: Sub<B1>,
           Sub1<UInt<T, B>>: Unsigned,
           V: Variance + RemoveIndex<Sub1<UInt<T, B>>>,
           (U, V): Variance,
@@ -239,7 +237,7 @@ pub type Contracted<V, Ul, Uh> = <V as Contract<Ul, Uh>>::Output;
 
 impl<Ul, Uh, V> Contract<Ul, Uh> for V
     where Ul: Unsigned,
-          Uh: Unsigned + Sub<U1> + Cmp<Ul>,
+          Uh: Unsigned + Sub<B1> + Cmp<Ul>,
           Sub1<Uh>: Unsigned,
           <Uh as Cmp<Ul>>::Output: Same<Greater>,
           V: Index<Ul> + Index<Uh> + RemoveIndex<Ul>,
