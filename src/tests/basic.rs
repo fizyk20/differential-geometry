@@ -1,6 +1,6 @@
 use typenum::consts::{U0, U1, U2, U4};
 use coordinates::{CoordinateSystem, Point};
-use tensors::{Vector, Covector, Matrix, Tensor, ContravariantIndex, InnerProduct};
+use tensors::{Vector, Covector, Matrix, InvTwoForm, Scalar};
 use generic_array::GenericArray;
 
 struct Test2;
@@ -96,7 +96,7 @@ fn test_mul_scalar() {
     let p = Point::new(GenericArray::default());
     let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
     // this works
-    let result: Vector<Test2> = <Vector<Test2> as Mul<f64>>::mul(vector1, 5.0);
+    let result: Vector<Test2> = mul!(_, f64; vector1, 5.0);
     // this doesn't
     // let result: Vector<Test2> = vector1 * 5.0;
 
@@ -111,8 +111,7 @@ fn test_mul_vector() {
     let vector2 = Vector::<Test2>::new(p, arr![f64; 3.0, 4.0]);
 
     // this works
-    let result: Tensor<Test2, (ContravariantIndex, ContravariantIndex)> =
-        <Vector<Test2> as Mul<Vector<Test2>>>::mul(vector1, vector2);
+    let result: InvTwoForm<Test2> = mul!(_, Vector<Test2>; vector1, vector2);
     // this doesn't
     // let result = vector1 * vector2;
 
@@ -128,8 +127,7 @@ fn test_inner_product() {
     let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
     let vector2 = Covector::<Test2>::new(p, arr![f64; 3.0, 4.0]);
 
-    let result: Tensor<Test2, ()> =
-        <Vector<Test2> as InnerProduct<Covector<Test2>, U0, U1>>::inner_product(vector1, vector2);
+    let result: Scalar<Test2> = inner!(_, Covector<Test2>; U0, U1; vector1, vector2);
 
     assert_eq!(*result, 11.0);
 }
