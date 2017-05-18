@@ -1,6 +1,6 @@
 use typenum::consts::{U0, U1, U2, U4};
 use coordinates::{CoordinateSystem, Point};
-use tensors::{Vector, Covector, Matrix, InvTwoForm, Scalar};
+use tensors::{Vector, Covector, Matrix, TwoForm, InvTwoForm, Scalar};
 use generic_array::GenericArray;
 
 struct Test2;
@@ -128,6 +128,19 @@ fn test_inner_product() {
     let vector2 = Covector::<Test2>::new(p, arr![f64; 3.0, 4.0]);
 
     let result: Scalar<Test2> = inner!(_, Covector<Test2>; U0, U1; vector1, vector2);
+
+    assert_eq!(*result, 11.0);
+}
+
+#[test]
+fn test_complex_inner_product() {
+    let p = Point::new(GenericArray::default());
+    let form = TwoForm::<Test2>::new(p, arr![f64; 1.0, 0.0, 0.0, 1.0]);
+    let vector1 = Vector::<Test2>::new(p, arr![f64; 1.0, 2.0]);
+    let vector2 = Vector::<Test2>::new(p, arr![f64; 3.0, 4.0]);
+
+    let temp = inner!(_, Vector<Test2>; U0, U2; form, vector1);
+    let result = inner!(_, Vector<Test2>; U0, U1; temp, vector2);
 
     assert_eq!(*result, 11.0);
 }

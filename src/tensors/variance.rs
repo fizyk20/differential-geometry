@@ -117,6 +117,12 @@ impl<T, U> Concat<U> for T
     type Output = (T, U);
 }
 
+impl<T> Concat<T> for ()
+    where T: TensorIndex
+{
+    type Output = T;
+}
+
 impl<T, U, V> Concat<V> for (T, U)
     where T: TensorIndex,
           V: TensorIndex,
