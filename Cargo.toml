@@ -1,7 +1,7 @@
 [package]
 
 name = "differential-geometry"
-version = "0.2.0"
+version = "0.2.1"
 authors = [ "Bartłomiej Kamiński <fizyk20@gmail.com>" ]
 description = "A library for differential-geometric calculations"
 license = "MIT"
@@ -13,5 +13,4 @@ name = "diffgeom"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-typenum = "1.9"
-generic-array = "0.8"
+generic-array = "0.8.2"
