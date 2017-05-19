@@ -1,13 +1,15 @@
 //! Module defining variances (types of tensors)
-use std::ops::{Add, Sub};
-use typenum::uint::{Unsigned, UInt};
-use typenum::bit::Bit;
-use typenum::consts::{U0, U1, B1};
-use typenum::{Cmp, Same, Greater};
-use typenum::{Add1, Sub1};
 
-/// This enum serves to represent the type of a tensor. A tensor can have any number of indices, and each one can be either
-/// covariant (a lower index), or contravariant (an upper index). For example, a vector is a tensor with only one contravariant index.
+use std::ops::{Add, Sub};
+use typenum::{Add1, Sub1};
+use typenum::{Cmp, Greater, Same};
+use typenum::bit::Bit;
+use typenum::consts::{B1, U0, U1};
+use typenum::uint::{UInt, Unsigned};
+
+/// This enum serves to represent the type of a tensor. A tensor can have any number of indices,
+/// and each one can be either covariant (a lower index), or contravariant (an upper index).
+/// For example, a vector is a tensor with only one contravariant index.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum IndexType {
     Covariant,
@@ -262,18 +264,21 @@ mod test {
 
     #[test]
     fn test_variance() {
-        assert_eq!(<(CovariantIndex, ContravariantIndex) as Variance>::variance(), vec![IndexType::Covariant, IndexType::Contravariant]);
+        assert_eq!(<(CovariantIndex, ContravariantIndex) as Variance>::variance(),
+                   vec![IndexType::Covariant, IndexType::Contravariant]);
     }
 
     #[test]
     fn test_variance_concat() {
         assert_eq!(<Joined<CovariantIndex, ContravariantIndex> as Variance>::variance(),
-            vec![IndexType::Covariant, IndexType::Contravariant]);
+                   vec![IndexType::Covariant, IndexType::Contravariant]);
 
-        assert_eq!(<Joined<(CovariantIndex, CovariantIndex), ContravariantIndex> as Variance>::variance(),
+        assert_eq!(
+            <Joined<(CovariantIndex, CovariantIndex), ContravariantIndex> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
 
-        assert_eq!(<Joined<CovariantIndex, (CovariantIndex, ContravariantIndex)> as Variance>::variance(),
+        assert_eq!(
+            <Joined<CovariantIndex, (CovariantIndex, ContravariantIndex)> as Variance>::variance(),
             vec![IndexType::Covariant, IndexType::Covariant, IndexType::Contravariant]);
 
         assert_eq!(<Joined<(ContravariantIndex, CovariantIndex),
@@ -290,15 +295,19 @@ mod test {
                    IndexType::Covariant);
 
         assert_eq!(<At<(CovariantIndex, ContravariantIndex), U0> as TensorIndex>::index_type(),
-            IndexType::Covariant);
+                   IndexType::Covariant);
 
         assert_eq!(<At<(CovariantIndex, ContravariantIndex), U1> as TensorIndex>::index_type(),
+                   IndexType::Contravariant);
+
+        assert_eq!(
+            <At<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0> as TensorIndex>
+                ::index_type(),
             IndexType::Contravariant);
 
-        assert_eq!(<At<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0> as TensorIndex>::index_type(),
-            IndexType::Contravariant);
-
-        assert_eq!(<At<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U2> as TensorIndex>::index_type(),
+        assert_eq!(
+            <At<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U2> as TensorIndex>
+                ::index_type(),
             IndexType::Covariant);
     }
 
@@ -313,22 +322,30 @@ mod test {
         assert_eq!(<Removed<(CovariantIndex, ContravariantIndex), U1> as Variance>::variance(),
             vec![IndexType::Covariant]);
 
-        assert_eq!(<Removed<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U1> as Variance>::variance(),
+        assert_eq!(
+            <Removed<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U1> as Variance>
+                ::variance(),
             vec![IndexType::Contravariant, IndexType::Covariant]);
     }
 
     #[test]
     fn test_contract() {
-        assert_eq!(<Contracted<(CovariantIndex, ContravariantIndex), U0, U1> as Variance>::variance(),
+        assert_eq!(<Contracted<(CovariantIndex, ContravariantIndex), U0, U1> as Variance>
+            ::variance(),
             vec![]);
 
-        assert_eq!(<Contracted<(ContravariantIndex, CovariantIndex), U0, U1> as Variance>::variance(),
+        assert_eq!(<Contracted<(ContravariantIndex, CovariantIndex), U0, U1> as Variance>
+            ::variance(),
             vec![]);
 
-        assert_eq!(<Contracted<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0, U1> as Variance>::variance(),
+        assert_eq!(
+            <Contracted<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0, U1> as Variance>
+                ::variance(),
             vec![IndexType::Covariant]);
 
-        assert_eq!(<Contracted<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0, U2> as Variance>::variance(),
+        assert_eq!(
+            <Contracted<(ContravariantIndex, (CovariantIndex, CovariantIndex)), U0, U2> as Variance>
+                ::variance(),
             vec![IndexType::Covariant]);
     }
 }

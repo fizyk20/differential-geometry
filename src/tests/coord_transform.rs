@@ -1,6 +1,6 @@
-use typenum::consts::U3;
-use coordinates::{CoordinateSystem, Point, ConversionTo};
+use coordinates::{ConversionTo, CoordinateSystem, Point};
 use tensors::Vector;
+use typenum::consts::U3;
 
 struct Cartesian;
 struct Cylindrical;

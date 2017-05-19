@@ -121,9 +121,11 @@ impl<T, V> Tensor<T, V>
         &self.p
     }
 
-    /// Converts a set of tensor indices passed as a slice into a single index for the internal array.
+    /// Converts a set of tensor indices passed as a slice into a single index
+    /// for the internal array.
     ///
-    /// The length of the slice (the number of indices) has to be compatible with the rank of the tensor.
+    /// The length of the slice (the number of indices) has to be compatible
+    /// with the rank of the tensor.
     pub fn get_coord(i: &[usize]) -> usize {
         assert_eq!(i.len(), V::rank());
         let dim = T::dimension();
@@ -166,7 +168,8 @@ impl<T, V> Tensor<T, V>
     ///
     /// One-dimensional array represents an n-dimensional tensor in such a way, that
     /// the last index is the one that is changing the most often, i.e. the sequence is
-    /// as follows: (0,0,...,0), (0,0,...,1), (0,0,...,2), ..., (0,0,...,1,0), (0,0,...,1,1), ... etc.
+    /// as follows:
+    /// (0,0,...,0), (0,0,...,1), (0,0,...,2), ..., (0,0,...,1,0), (0,0,...,1,1), ... etc.
     pub fn new(point: Point<T>,
                coords: GenericArray<f64, Exp<T::Dimension, V::Rank>>)
                -> Tensor<T, V> {
@@ -183,7 +186,8 @@ impl<T, V> Tensor<T, V>
     ///
     /// One-dimensional slice represents an n-dimensional tensor in such a way, that
     /// the last index is the one that is changing the most often, i.e. the sequence is
-    /// as follows: (0,0,...,0), (0,0,...,1), (0,0,...,2), ..., (0,0,...,1,0), (0,0,...,1,1), ... etc.
+    /// as follows:
+    /// (0,0,...,0), (0,0,...,1), (0,0,...,2), ..., (0,0,...,1,0), (0,0,...,1,1), ... etc.
     pub fn from_slice(point: Point<T>, slice: &[f64]) -> Tensor<T, V> {
         assert_eq!(Tensor::<T, V>::get_num_coords(), slice.len());
         Tensor {
@@ -484,12 +488,18 @@ impl<T, U, V, Ul, Uh> InnerProduct<Tensor<T, V>, Ul, Uh> for Tensor<T, U>
 
         let mut result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::zero(self.p.clone());
         let (modl, modh, modv) = match (indexl < u_rank, indexh < u_rank) {
-            (true, true) => (dim.pow((u_rank - 2 - indexl) as u32), dim.pow((u_rank - 1 - indexh) as u32), dim.pow(v_rank as u32)),
+            (true, true) => (dim.pow((u_rank - 2 - indexl) as u32),
+                             dim.pow((u_rank - 1 - indexh) as u32),
+                             dim.pow(v_rank as u32)),
             (true, false) => {
-                (dim.pow((u_rank - 1 - indexl) as u32), dim.pow((u_rank + v_rank - 1 - indexh) as u32), dim.pow((v_rank - 1) as u32))
+                (dim.pow((u_rank - 1 - indexl) as u32),
+                 dim.pow((u_rank + v_rank - 1 - indexh) as u32),
+                 dim.pow((v_rank - 1) as u32))
             }
             (false, false) => {
-                (dim.pow((u_rank + v_rank - 2 - indexl) as u32), dim.pow((u_rank + v_rank - 1 - indexh) as u32), dim.pow(v_rank as u32))
+                (dim.pow((u_rank + v_rank - 2 - indexl) as u32),
+                 dim.pow((u_rank + v_rank - 1 - indexh) as u32),
+                 dim.pow(v_rank as u32))
             }
             _ => unreachable!(),
         };
@@ -712,8 +722,11 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
 ///
 /// The return value is an `Option`, since `self` may be non-invertible -
 /// in such a case, None is returned
-    pub fn inverse(&self) -> Option<Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>> {
-        let mut result = Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>::zero(self.p.clone());
+    pub fn inverse(&self)
+        -> Option<Tensor<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>> {
+        let mut result =
+            Tensor::<T, (<Ul as OtherIndex>::Output, <Ur as OtherIndex>::Output)>
+            ::zero(self.p.clone());
 
         let mut tmp = self.clone();
 

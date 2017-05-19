@@ -1,8 +1,8 @@
-use super::coordinates::{Point, CoordinateSystem};
-use super::tensors::{TwoForm, InvTwoForm, Tensor, CovariantIndex, ContravariantIndex, InnerProduct};
-use typenum::{Pow, Exp};
-use typenum::consts::{U1, U2, U3};
+use super::coordinates::{CoordinateSystem, Point};
+use super::tensors::{ContravariantIndex, CovariantIndex, InnerProduct, InvTwoForm, Tensor, TwoForm};
 use generic_array::ArrayLength;
+use typenum::{Exp, Pow};
+use typenum::consts::{U1, U2, U3};
 
 /// Trait representing the metric properties of the coordinate system
 pub trait MetricSystem: CoordinateSystem
@@ -15,8 +15,8 @@ pub trait MetricSystem: CoordinateSystem
 
     /// Returns the inverse metric tensor at a given point.
     ///
-    /// The default implementation calculates the metric and then inverts it. A direct implementation
-    /// may be desirable for more performance.
+    /// The default implementation calculates the metric and then inverts it. A direct
+    /// implementation may be desirable for more performance.
     fn inv_g(point: &Point<Self>) -> InvTwoForm<Self> {
         Self::g(point).inverse().unwrap()
     }

@@ -28,14 +28,14 @@ Below you can see a code sample presenting some simple operations.
 
 ```
 # extern crate diffgeom;
-# extern crate typenum;
 # #[macro_use]
 # extern crate generic_array;
 use std::ops::Mul;
 use generic_array::{GenericArray, ArrayLength};
 use diffgeom::coordinates::{CoordinateSystem, Point};
 use diffgeom::tensors::{Vector, Covector, Matrix, InnerProduct};
-use typenum::consts::{U0, U1};
+use generic_array::typenum;
+use generic_array::typenum::consts::{U0, U1};
 
 fn main() {
     // First, a coordinate system must be defined
@@ -59,15 +59,17 @@ fn main() {
     // let matrix = vector * covector;
 
     // They can be contracted
-    let scalar = <Vector<SomeSystem> as InnerProduct<Covector<SomeSystem>, U0, U1>>::inner_product(vector, covector);
+    let scalar = <Vector<SomeSystem> as InnerProduct<Covector<SomeSystem>, U0, U1>>
+        ::inner_product(vector, covector);
 
-    assert_eq!(*scalar, *matrix.trace::<U0, U1>());  // scalars returned by tensor functions need to be dereffed to f64
+    // scalars returned by tensor functions need to be dereffed to f64
+    assert_eq!(*scalar, *matrix.trace::<U0, U1>());
 }
 ```
 */
-extern crate typenum;
 #[macro_use]
-extern crate generic_array;
+pub extern crate generic_array;
+pub use generic_array::typenum;
 
 pub mod coordinates;
 pub mod tensors;

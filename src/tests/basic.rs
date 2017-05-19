@@ -1,7 +1,7 @@
-use typenum::consts::{U0, U1, U2, U4};
 use coordinates::{CoordinateSystem, Point};
-use tensors::{Vector, Covector, Matrix, TwoForm, InvTwoForm, Scalar};
 use generic_array::GenericArray;
+use tensors::{Covector, InvTwoForm, Matrix, Scalar, TwoForm, Vector};
+use typenum::consts::{U0, U1, U2, U4};
 
 struct Test2;
 impl CoordinateSystem for Test2 {
@@ -80,6 +80,7 @@ fn test_trace() {
 }
 
 // needed for tests below
+
 use std::ops::Mul;
 
 #[test]
