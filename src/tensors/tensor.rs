@@ -1,13 +1,14 @@
 //! This module defines the `Tensor` type and all sorts of operations on it.
-use coordinates::{CoordinateSystem, Point, ConversionTo};
+
+use super::{ContravariantIndex, CovariantIndex, IndexType, TensorIndex, Variance};
+use super::variance::{Concat, Contract, Contracted, Joined, OtherIndex};
+use coordinates::{ConversionTo, CoordinateSystem, Point};
+use generic_array::{ArrayLength, GenericArray};
+use std::ops::{Add, Deref, DerefMut, Div, Mul, Sub};
 use std::ops::{Index, IndexMut};
-use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
+use typenum::{Add1, Exp, Pow, Same};
+use typenum::consts::{B1, U2};
 use typenum::uint::Unsigned;
-use typenum::consts::{U2, B1};
-use typenum::{Pow, Same, Add1, Exp};
-use generic_array::{GenericArray, ArrayLength};
-use super::{CovariantIndex, ContravariantIndex, TensorIndex, Variance, IndexType};
-use super::variance::{Concat, Contract, Joined, Contracted, OtherIndex};
 
 /// Struct representing a tensor.
 ///
@@ -204,20 +205,27 @@ impl<T, V> Tensor<T, V>
     {
         let index1 = Ul::to_usize();
         let index2 = Uh::to_usize();
+        let rank = V::Rank::to_usize();
+        let dim = T::Dimension::to_usize();
 
         let mut result = Tensor::<T, Contracted<V, Ul, Uh>>::zero(self.p.clone());
+        let num_coords_result = Tensor::<T, Contracted<V, Ul, Uh>>::get_num_coords();
+        let modh = dim.pow((rank - 1 - index2) as u32);
+        let modl = dim.pow((rank - 2 - index1) as u32);
 
-        for coord in result.iter_coords() {
+        for coord in 0..num_coords_result {
+            let coord1 = coord / modl;
+            let coord1rest = coord % modl;
+            let coord2 = coord1rest / modh;
+            let coord2rest = coord1rest % modh;
+            let coord_template = coord1 * modl * dim * dim + coord2 * modh * dim + coord2rest;
             let mut sum = 0.0;
 
             for i in 0..T::dimension() {
-                let mut vec_coords = coord.to_vec();
-                vec_coords.insert(index1, i);
-                vec_coords.insert(index2, i);
-                sum += self[&*vec_coords];
+                sum += self[coord_template + i * modl * dim + i * modh];
             }
 
-            result[&*coord] = sum;
+            result[coord] = sum;
         }
 
         result
@@ -425,16 +433,12 @@ impl<T, U, V> Mul<Tensor<T, V>> for Tensor<T, U>
     fn mul(self, rhs: Tensor<T, V>) -> Tensor<T, Joined<U, V>> {
         assert!(self.p == rhs.p);
         let mut result = Tensor::zero(self.p.clone());
-        for coord1 in self.iter_coords() {
-            for coord2 in rhs.iter_coords() {
-                let mut vec_coord1 = coord1.to_vec();
-                let mut vec_coord2 = coord2.to_vec();
-                vec_coord1.append(&mut vec_coord2);
-                let index: &[usize] = &vec_coord1;
-                let index1: &[usize] = &coord1;
-                let index2: &[usize] = &coord2;
-                result[index] = self[index1] * rhs[index2];
-            }
+        let num_coords2 = Tensor::<T, V>::get_num_coords();
+        let num_coords_result = Tensor::<T, Joined<U, V>>::get_num_coords();
+        for coord in 0..num_coords_result {
+            let coord1 = coord / num_coords2;
+            let coord2 = coord % num_coords2;
+            result[coord] = self[coord1] * rhs[coord2];
         }
         result
     }
@@ -462,7 +466,7 @@ impl<T, U, V, Ul, Uh> InnerProduct<Tensor<T, V>, Ul, Uh> for Tensor<T, U>
           Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
           Exp<T::Dimension, V::Rank>: ArrayLength<f64>,
           U: Concat<V>,
-          Joined<U,V>: Contract<Ul, Uh>,
+          Joined<U, V>: Contract<Ul, Uh>,
           <Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank: ArrayLength<usize>,
           T::Dimension: Pow<<Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank>,
           Exp<T::Dimension, <Contracted<Joined<U, V>, Ul, Uh> as Variance>::Rank>: ArrayLength<f64>
@@ -471,18 +475,71 @@ impl<T, U, V, Ul, Uh> InnerProduct<Tensor<T, V>, Ul, Uh> for Tensor<T, U>
 
     fn inner_product(self, rhs: Tensor<T, V>) -> Tensor<T, Contracted<Joined<U, V>, Ul, Uh>> {
         assert!(self.p == rhs.p);
-        let mut result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::zero(self.p.clone());
+        let indexl = Ul::to_usize();
+        let indexh = Uh::to_usize();
+        let num_coords_result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::get_num_coords();
+        let u_rank = U::Rank::to_usize();
+        let v_rank = V::Rank::to_usize();
+        let dim = T::Dimension::to_usize();
 
-        for coord_res in result.iter_coords() {
-            let mut sum = 0.0;
-            for i in 0..T::dimension() {
-                let mut coords = coord_res.to_vec();
-                coords.insert(Ul::to_usize(), i);
-                coords.insert(Uh::to_usize(), i);
-                let (coords1, coords2) = coords.split_at(U::Rank::to_usize());
-                sum += self[coords1]*rhs[coords2];
+        let mut result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::zero(self.p.clone());
+        let (modl, modh, modv) = match (indexl < u_rank, indexh < u_rank) {
+            (true, true) => (dim.pow((u_rank - 2 - indexl) as u32), dim.pow((u_rank - 1 - indexh) as u32), dim.pow(v_rank as u32)),
+            (true, false) => {
+                (dim.pow((u_rank - 1 - indexl) as u32), dim.pow((u_rank + v_rank - 1 - indexh) as u32), dim.pow((v_rank - 1) as u32))
             }
-            result[&*coord_res] = sum;
+            (false, false) => {
+                (dim.pow((u_rank + v_rank - 2 - indexl) as u32), dim.pow((u_rank + v_rank - 1 - indexh) as u32), dim.pow(v_rank as u32))
+            }
+            _ => unreachable!(),
+        };
+
+        let to_templates_both1 = |coord| {
+            let coords1 = coord / modv;
+            let coords2 = coord % modv;
+            let coords1part1 = coords1 / modl;
+            let coords1part2 = (coords1 % modl) / modh;
+            let coords1part3 = coords1 % modh;
+            (coords1part1 * modl * dim * dim + coords1part2 * modh * dim + coords1part3, coords2)
+        };
+
+        let to_templates_both2 = |coord| {
+            let coords1 = coord / modv;
+            let coords2 = coord % modv;
+            let coords2part1 = coords2 / modl;
+            let coords2part2 = (coords2 % modl) / modh;
+            let coords2part3 = coords2 % modh;
+            (coords1, coords2part1 * modl * dim * dim + coords2part2 * modh * dim + coords2part3)
+        };
+
+        let to_templates = |coord| {
+            let coords1 = coord / modv;
+            let coords2 = coord % modv;
+            let coords1part1 = coords1 / modl;
+            let coords1part2 = coords1 % modl;
+            let coords2part1 = coords2 / modh;
+            let coords2part2 = coords2 % modh;
+            (coords1part1 * modl * dim + coords1part2, coords2part1 * modh * dim + coords2part2)
+        };
+
+        for coord in 0..num_coords_result {
+            let mut sum = 0.0;
+            let (template1, template2) = match (indexl < u_rank, indexh < u_rank) {
+                (false, false) => to_templates_both2(coord),
+                (true, false) => to_templates(coord),
+                (true, true) => to_templates_both1(coord),
+                _ => unreachable!(),
+            };
+            for i in 0..dim {
+                let (coord1, coord2) = match (indexl < u_rank, indexh < u_rank) {
+                    (false, false) => (template1, template2 + i * modl + i * modh),
+                    (true, false) => (template1 + i * modl, template2 + i * modh),
+                    (true, true) => (template1 + i * modl + i * modh, template2),
+                    _ => unreachable!(),
+                };
+                sum += self[coord1] * rhs[coord2];
+            }
+            result[coord] = sum;
         }
 
         result
@@ -512,7 +569,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         let mut result = Tensor::<T, (Ul, Ur)>::zero(p);
 
         for i in 0..T::dimension() {
-            let coords: &[usize] = &[i,i];
+            let coords: &[usize] = &[i, i];
             result[coords] = 1.0;
         }
 
@@ -546,7 +603,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
             let mut absmax = 0.0;
 
             for j in 0..n {
-                let coord: &[usize] = &[i,j];
+                let coord: &[usize] = &[i, j];
                 let maxtemp = self[coord].abs();
                 absmax = if maxtemp > absmax { maxtemp } else { absmax };
             }
@@ -590,10 +647,9 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
             }
 
             if max_row != j {
-                if (j == n-2) && self[&[j, j+1] as &[usize]] == 0.0 {
+                if (j == n - 2) && self[&[j, j + 1] as &[usize]] == 0.0 {
                     max_row = j;
-                }
-                else {
+                } else {
                     for k in 0..n {
                         let jk: &[usize] = &[j, k];
                         let maxrow_k: &[usize] = &[max_row, k];
@@ -614,9 +670,9 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
                 self[jj] = absmin;
             }
 
-            if j != n-1 {
+            if j != n - 1 {
                 let maxtemp = 1.0 / self[jj];
-                for i in j+1..n {
+                for i in j + 1..n {
                     self[&[i, j] as &[usize]] *= maxtemp;
                 }
             }
@@ -626,9 +682,10 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
     }
 
 // Function solving a linear system of equations (self*x = b) using the LU decomposition
-    fn lu_substitution(&self, b: &GenericArray<f64, T::Dimension>, permute: &GenericArray<usize, T::Dimension>)
-        -> GenericArray<f64, T::Dimension>
-    {
+    fn lu_substitution(&self,
+                       b: &GenericArray<f64, T::Dimension>,
+                       permute: &GenericArray<usize, T::Dimension>)
+                       -> GenericArray<f64, T::Dimension> {
         let mut result = b.clone();
         let n = T::dimension();
 
@@ -642,7 +699,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
         }
 
         for i in (0..n).rev() {
-            for j in i+1..n {
+            for j in i + 1..n {
                 result[i] -= self[&[i, j] as &[usize]] * result[j];
             }
             result[i] /= self[&[i, i] as &[usize]];
@@ -662,7 +719,7 @@ impl<T, Ul, Ur> Tensor<T, (Ul, Ur)>
 
         let permute = match tmp.lu_decompose() {
             Some(p) => p,
-            None => return None
+            None => return None,
         };
 
         for i in 0..T::dimension() {
