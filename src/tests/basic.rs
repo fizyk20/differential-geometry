@@ -86,8 +86,10 @@ use std::ops::Mul;
 #[test]
 fn test_mul_trait() {
     assert_eq!(<Vector<Test2> as Mul<Vector<Test2>>>::Output::get_rank(), 2);
-    assert_eq!(<Vector<Test2> as Mul<Vector<Test2>>>::Output::get_num_coords(),
-               4);
+    assert_eq!(
+        <Vector<Test2> as Mul<Vector<Test2>>>::Output::get_num_coords(),
+        4
+    );
     assert_eq!(<Vector<Test2> as Mul<f64>>::Output::get_rank(), 1);
     assert_eq!(<Vector<Test2> as Mul<f64>>::Output::get_num_coords(), 2);
 }

@@ -13,4 +13,4 @@ name = "diffgeom"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-generic-array = "0.8.2"
+generic-array = "0.11"

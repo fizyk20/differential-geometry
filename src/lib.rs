@@ -67,13 +67,12 @@ fn main() {
 }
 ```
 */
-#[macro_use]
 pub extern crate generic_array;
 pub use generic_array::typenum;
 
 pub mod coordinates;
-pub mod tensors;
 pub mod metric;
+pub mod tensors;
 #[macro_use]
 pub mod macros;
 

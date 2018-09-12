@@ -3,9 +3,9 @@
 use super::tensors::{ContravariantIndex, CovariantIndex, Matrix, Tensor};
 use generic_array::{ArrayLength, GenericArray};
 use std::ops::{Index, IndexMut};
-use typenum::Pow;
 use typenum::consts::U2;
 use typenum::uint::Unsigned;
+use typenum::Pow;
 
 /// `CoordinateSystem` marks a struct (usually a unit struct) as representing a coordinate system.
 pub trait CoordinateSystem: Sized {
@@ -34,7 +34,8 @@ pub struct Point<T: CoordinateSystem> {
 }
 
 impl<T> Point<T>
-    where T: CoordinateSystem
+where
+    T: CoordinateSystem,
 {
     /// Creates a new point with coordinates described by the array
     pub fn new(coords: GenericArray<f64, T::Dimension>) -> Point<T> {
@@ -43,12 +44,15 @@ impl<T> Point<T>
 
     /// Creates a new point with coordinates passed in the slice
     pub fn from_slice(coords: &[f64]) -> Point<T> {
-        Point { x: GenericArray::clone_from_slice(coords) }
+        Point {
+            x: GenericArray::clone_from_slice(coords),
+        }
     }
 }
 
 impl<T> Clone for Point<T>
-    where T: CoordinateSystem
+where
+    T: CoordinateSystem,
 {
     fn clone(&self) -> Point<T> {
         Point::new(self.x.clone())
@@ -56,13 +60,14 @@ impl<T> Clone for Point<T>
 }
 
 impl<T> Copy for Point<T>
-    where T: CoordinateSystem,
-          <T::Dimension as ArrayLength<f64>>::ArrayType: Copy
-{
-}
+where
+    T: CoordinateSystem,
+    <T::Dimension as ArrayLength<f64>>::ArrayType: Copy,
+{}
 
 impl<T> Index<usize> for Point<T>
-    where T: CoordinateSystem
+where
+    T: CoordinateSystem,
 {
     type Output = f64;
 
@@ -72,7 +77,8 @@ impl<T> Index<usize> for Point<T>
 }
 
 impl<T> IndexMut<usize> for Point<T>
-    where T: CoordinateSystem
+where
+    T: CoordinateSystem,
 {
     fn index_mut(&mut self, idx: usize) -> &mut f64 {
         &mut self.x[idx]
@@ -80,7 +86,8 @@ impl<T> IndexMut<usize> for Point<T>
 }
 
 impl<T> PartialEq<Point<T>> for Point<T>
-    where T: CoordinateSystem
+where
+    T: CoordinateSystem,
 {
     fn eq(&self, rhs: &Point<T>) -> bool {
         (0..T::dimension()).all(|i| self[i] == rhs[i])
@@ -93,8 +100,9 @@ impl<T> Eq for Point<T> where T: CoordinateSystem {}
 /// for a `CoordinateSystem` will allow objects in that system to be converted to the system `T`
 /// (note that `T` also has to be a `CoordinateSystem`).
 pub trait ConversionTo<T: CoordinateSystem + 'static>: CoordinateSystem
-    where T::Dimension: Pow<U2>,
-          <T::Dimension as Pow<U2>>::Output: ArrayLength<f64>
+where
+    T::Dimension: Pow<U2>,
+    <T::Dimension as Pow<U2>>::Output: ArrayLength<f64>,
 {
     /// Function converting the coordinates of a point.
     fn convert_point(p: &Point<Self>) -> Point<T>;
