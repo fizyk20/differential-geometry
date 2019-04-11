@@ -63,7 +63,8 @@ impl<T> Copy for Point<T>
 where
     T: CoordinateSystem,
     <T::Dimension as ArrayLength<f64>>::ArrayType: Copy,
-{}
+{
+}
 
 impl<T> Index<usize> for Point<T>
 where

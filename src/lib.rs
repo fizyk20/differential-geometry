@@ -67,6 +67,7 @@ fn main() {
 }
 ```
 */
+#[macro_use]
 pub extern crate generic_array;
 pub use generic_array::typenum;
 

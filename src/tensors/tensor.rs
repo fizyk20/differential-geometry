@@ -53,7 +53,8 @@ where
     <T::Dimension as ArrayLength<f64>>::ArrayType: Copy,
     Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
     <Exp<T::Dimension, U::Rank> as ArrayLength<f64>>::ArrayType: Copy,
-{}
+{
+}
 
 /// A struct for iterating over the coordinates of a tensor.
 pub struct CoordIterator<U>
@@ -125,6 +126,11 @@ where
     /// Returns the point at which the tensor is defined.
     pub fn get_point(&self) -> &Point<T> {
         &self.p
+    }
+
+    /// Sets the point at which the tensor is defined.
+    pub fn set_point(&mut self, p: Point<T>) {
+        self.p = p;
     }
 
     /// Converts a set of tensor indices passed as a slice into a single index
@@ -534,6 +540,8 @@ where
             (
                 coords1part1 * modl * dim * dim + coords1part2 * modh * dim + coords1part3,
                 coords2,
+                modl + modh,
+                0,
             )
         };
 
@@ -546,6 +554,8 @@ where
             (
                 coords1,
                 coords2part1 * modl * dim * dim + coords2part2 * modh * dim + coords2part3,
+                0,
+                modl + modh,
             )
         };
 
@@ -559,25 +569,26 @@ where
             (
                 coords1part1 * modl * dim + coords1part2,
                 coords2part1 * modh * dim + coords2part2,
+                modl,
+                modh,
             )
         };
 
-        for coord in 0..num_coords_result {
-            let mut sum = 0.0;
-            let (template1, template2) = match (indexl < u_rank, indexh < u_rank) {
-                (false, false) => to_templates_both2(coord),
-                (true, false) => to_templates(coord),
-                (true, true) => to_templates_both1(coord),
+        let templates: &Fn(usize) -> (usize, usize, usize, usize) =
+            match (indexl < u_rank, indexh < u_rank) {
+                (false, false) => &to_templates_both2,
+                (true, false) => &to_templates,
+                (true, true) => &to_templates_both1,
                 _ => unreachable!(),
             };
-            for i in 0..dim {
-                let (coord1, coord2) = match (indexl < u_rank, indexh < u_rank) {
-                    (false, false) => (template1, template2 + i * modl + i * modh),
-                    (true, false) => (template1 + i * modl, template2 + i * modh),
-                    (true, true) => (template1 + i * modl + i * modh, template2),
-                    _ => unreachable!(),
-                };
+
+        for coord in 0..num_coords_result {
+            let mut sum = 0.0;
+            let (mut coord1, mut coord2, step1, step2) = templates(coord);
+            for _ in 0..dim {
                 sum += self[coord1] * rhs[coord2];
+                coord1 += step1;
+                coord2 += step2;
             }
             result[coord] = sum;
         }
