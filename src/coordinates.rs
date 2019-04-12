@@ -2,6 +2,7 @@
 
 use super::tensors::{ContravariantIndex, CovariantIndex, Matrix, Tensor};
 use generic_array::{ArrayLength, GenericArray};
+use std::fmt;
 use std::ops::{Index, IndexMut};
 use typenum::consts::U2;
 use typenum::uint::Unsigned;
@@ -96,6 +97,15 @@ where
 }
 
 impl<T> Eq for Point<T> where T: CoordinateSystem {}
+
+impl<T> fmt::Debug for Point<T>
+where
+    T: CoordinateSystem,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Point{:?}", &self.x)
+    }
+}
 
 /// Trait used for conversions between different coordinate systems. Implementing `ConversionTo<T>`
 /// for a `CoordinateSystem` will allow objects in that system to be converted to the system `T`

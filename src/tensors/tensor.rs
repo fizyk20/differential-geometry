@@ -503,7 +503,7 @@ where
     type Output = Tensor<T, Contracted<Joined<U, V>, Ul, Uh>>;
 
     fn inner_product(self, rhs: Tensor<T, V>) -> Tensor<T, Contracted<Joined<U, V>, Ul, Uh>> {
-        assert!(self.p == rhs.p);
+        assert_eq!(self.p, rhs.p);
         let indexl = Ul::to_usize();
         let indexh = Uh::to_usize();
         let num_coords_result = Tensor::<T, Contracted<Joined<U, V>, Ul, Uh>>::get_num_coords();
