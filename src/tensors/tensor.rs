@@ -133,6 +133,11 @@ where
         self.p = p;
     }
 
+    /// Returns the tensor's coordinates as an array
+    pub fn coords_array(&self) -> &GenericArray<f64, Exp<T::Dimension, V::Rank>> {
+        &self.x
+    }
+
     /// Converts a set of tensor indices passed as a slice into a single index
     /// for the internal array.
     ///

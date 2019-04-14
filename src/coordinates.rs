@@ -49,6 +49,11 @@ where
             x: GenericArray::clone_from_slice(coords),
         }
     }
+
+    /// Returns the point's coordinates as an array
+    pub fn coords_array(&self) -> &GenericArray<f64, T::Dimension> {
+        &self.x
+    }
 }
 
 impl<T> Clone for Point<T>
