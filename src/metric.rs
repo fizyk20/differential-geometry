@@ -2,8 +2,9 @@ use super::coordinates::{CoordinateSystem, Point};
 use super::tensors::{
     ContravariantIndex, CovariantIndex, InnerProduct, InvTwoForm, Tensor, TwoForm,
 };
-use crate::typenum::consts::{U1, U2, U3};
-use crate::typenum::{Exp, Pow};
+use crate::inner;
+use crate::typenum::consts::{U0, U1, U2, U3};
+use crate::typenum::{Exp, Pow, Unsigned};
 use generic_array::ArrayLength;
 
 /// Trait representing the metric properties of the coordinate system
@@ -85,5 +86,49 @@ where
             U1,
             U2,
         >>::inner_product(ig, gamma)
+    }
+}
+
+impl<T> Tensor<T, ContravariantIndex>
+where
+    T: MetricSystem,
+    T::Dimension: Pow<U1> + Pow<U2> + Pow<U3> + Unsigned,
+    Exp<T::Dimension, U1>: ArrayLength<f64>,
+    Exp<T::Dimension, U2>: ArrayLength<f64>,
+    Exp<T::Dimension, U3>: ArrayLength<f64>,
+{
+    pub fn square(&self) -> f64 {
+        let g = T::g(self.get_point());
+        let temp = inner!(_, _; U1, U2; g, self.clone());
+        *inner!(_, _; U0, U1; temp, self.clone())
+    }
+
+    pub fn normalize(&mut self) {
+        let len = self.square().abs().sqrt();
+        for i in 0..T::Dimension::to_usize() {
+            self[i] /= len;
+        }
+    }
+}
+
+impl<T> Tensor<T, CovariantIndex>
+where
+    T: MetricSystem,
+    T::Dimension: Pow<U1> + Pow<U2> + Pow<U3> + Unsigned,
+    Exp<T::Dimension, U1>: ArrayLength<f64>,
+    Exp<T::Dimension, U2>: ArrayLength<f64>,
+    Exp<T::Dimension, U3>: ArrayLength<f64>,
+{
+    pub fn square(&self) -> f64 {
+        let g = T::inv_g(self.get_point());
+        let temp = inner!(_, _; U1, U2; g, self.clone());
+        *inner!(_, _; U0, U1; temp, self.clone())
+    }
+
+    pub fn normalize(&mut self) {
+        let len = self.square().abs().sqrt();
+        for i in 0..T::Dimension::to_usize() {
+            self[i] /= len;
+        }
     }
 }
