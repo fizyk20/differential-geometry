@@ -28,20 +28,19 @@ Below you can see a code sample presenting some simple operations.
 
 ```
 # extern crate diffgeom;
-# #[macro_use]
 # extern crate generic_array;
 use std::ops::Mul;
 use generic_array::{GenericArray, ArrayLength};
 use diffgeom::coordinates::{CoordinateSystem, Point};
 use diffgeom::tensors::{Vector, Covector, Matrix, InnerProduct};
-use generic_array::typenum;
-use generic_array::typenum::consts::{U0, U1};
+use generic_array::{arr, arr_impl};
+use generic_array::typenum::consts::{U0, U1, U2};
 
 fn main() {
     // First, a coordinate system must be defined
     struct SomeSystem;
     impl CoordinateSystem for SomeSystem {
-        type Dimension = typenum::consts::U2;    // a two-dimensional coordinate system
+        type Dimension = U2;    // a two-dimensional coordinate system
     }
 
     // Each tensor should be anchored at a point, so let's create one
@@ -67,15 +66,13 @@ fn main() {
 }
 ```
 */
-#[macro_use]
 pub extern crate generic_array;
 pub use generic_array::typenum;
 
 pub mod coordinates;
+pub mod macros;
 pub mod metric;
 pub mod tensors;
-#[macro_use]
-pub mod macros;
 
 #[cfg(test)]
 mod tests;

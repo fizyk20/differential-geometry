@@ -1,16 +1,12 @@
-use coordinates::{ConversionTo, CoordinateSystem, Point};
-use tensors::Vector;
-use typenum::consts::U3;
+use crate::coordinates::{ConversionTo, CoordinateSystem, Point};
+use crate::tensors::Vector;
+use crate::typenum::consts::U3;
+use generic_array::{arr, arr_impl};
 
 struct Cartesian;
-struct Cylindrical;
 struct Spherical;
 
 impl CoordinateSystem for Cartesian {
-    type Dimension = U3;
-}
-
-impl CoordinateSystem for Cylindrical {
     type Dimension = U3;
 }
 

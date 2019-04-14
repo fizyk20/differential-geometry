@@ -1,12 +1,12 @@
 //! Module containing basic types representing coordinate systems.
 
 use super::tensors::{ContravariantIndex, CovariantIndex, Matrix, Tensor};
+use crate::typenum::consts::U2;
+use crate::typenum::uint::Unsigned;
+use crate::typenum::Pow;
 use generic_array::{ArrayLength, GenericArray};
 use std::fmt;
 use std::ops::{Index, IndexMut};
-use typenum::consts::U2;
-use typenum::uint::Unsigned;
-use typenum::Pow;
 
 /// `CoordinateSystem` marks a struct (usually a unit struct) as representing a coordinate system.
 pub trait CoordinateSystem: Sized {

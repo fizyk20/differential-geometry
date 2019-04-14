@@ -2,13 +2,13 @@
 
 use super::variance::{Concat, Contract, Contracted, Joined, OtherIndex};
 use super::{ContravariantIndex, CovariantIndex, IndexType, TensorIndex, Variance};
-use coordinates::{ConversionTo, CoordinateSystem, Point};
+use crate::coordinates::{ConversionTo, CoordinateSystem, Point};
+use crate::typenum::consts::{B1, U2};
+use crate::typenum::uint::Unsigned;
+use crate::typenum::{Add1, Exp, Pow, Same};
 use generic_array::{ArrayLength, GenericArray};
 use std::ops::{Add, Deref, DerefMut, Div, Mul, Sub};
 use std::ops::{Index, IndexMut};
-use typenum::consts::{B1, U2};
-use typenum::uint::Unsigned;
-use typenum::{Add1, Exp, Pow, Same};
 
 /// Struct representing a tensor.
 ///

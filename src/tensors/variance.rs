@@ -1,11 +1,11 @@
 //! Module defining variances (types of tensors)
 
+use crate::typenum::bit::Bit;
+use crate::typenum::consts::{B1, U0, U1};
+use crate::typenum::uint::{UInt, Unsigned};
+use crate::typenum::{Add1, Sub1};
+use crate::typenum::{Cmp, Greater, Same};
 use std::ops::{Add, Sub};
-use typenum::bit::Bit;
-use typenum::consts::{B1, U0, U1};
-use typenum::uint::{UInt, Unsigned};
-use typenum::{Add1, Sub1};
-use typenum::{Cmp, Greater, Same};
 
 /// This enum serves to represent the type of a tensor. A tensor can have any number of indices,
 /// and each one can be either covariant (a lower index), or contravariant (an upper index).
@@ -271,7 +271,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use typenum::consts::{U0, U1, U2};
+    use crate::typenum::consts::{U0, U1, U2};
 
     #[test]
     fn test_variance() {

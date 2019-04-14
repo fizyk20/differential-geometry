@@ -2,9 +2,9 @@ use super::coordinates::{CoordinateSystem, Point};
 use super::tensors::{
     ContravariantIndex, CovariantIndex, InnerProduct, InvTwoForm, Tensor, TwoForm,
 };
+use crate::typenum::consts::{U1, U2, U3};
+use crate::typenum::{Exp, Pow};
 use generic_array::ArrayLength;
-use typenum::consts::{U1, U2, U3};
-use typenum::{Exp, Pow};
 
 /// Trait representing the metric properties of the coordinate system
 pub trait MetricSystem: CoordinateSystem

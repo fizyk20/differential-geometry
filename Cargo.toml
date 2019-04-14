@@ -1,14 +1,13 @@
 [package]
-
 name = "differential-geometry"
 version = "0.2.2"
 authors = [ "Bartłomiej Kamiński <fizyk20@gmail.com>" ]
 description = "A library for differential-geometric calculations"
 license = "MIT"
 repository = "https://github.com/fizyk20/differential-geometry.git"
+edition = "2018"
 
 [lib]
-
 name = "diffgeom"
 crate-type = ["rlib", "dylib"]
 
