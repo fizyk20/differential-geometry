@@ -12,7 +12,7 @@ name = "diffgeom"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-generic-array = "0.12"
+generic-array = "0.13"
 
 [dev-dependencies]
 rand = "0.5"

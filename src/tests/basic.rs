@@ -2,8 +2,8 @@ use crate::coordinates::{CoordinateSystem, Point};
 use crate::tensors::{Covector, InvTwoForm, Matrix, Scalar, TwoForm, Vector};
 use crate::typenum::consts::{U0, U1, U2, U4};
 use crate::{inner, mul};
+use generic_array::arr;
 use generic_array::GenericArray;
-use generic_array::{arr, arr_impl};
 
 struct Test2;
 impl CoordinateSystem for Test2 {

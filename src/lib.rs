@@ -33,7 +33,7 @@ use std::ops::Mul;
 use generic_array::{GenericArray, ArrayLength};
 use diffgeom::coordinates::{CoordinateSystem, Point};
 use diffgeom::tensors::{Vector, Covector, Matrix, InnerProduct};
-use generic_array::{arr, arr_impl};
+use generic_array::arr;
 use generic_array::typenum::consts::{U0, U1, U2};
 
 fn main() {

@@ -1,7 +1,7 @@
 use crate::coordinates::{ConversionTo, CoordinateSystem, Point};
 use crate::tensors::Vector;
 use crate::typenum::consts::U3;
-use generic_array::{arr, arr_impl};
+use generic_array::arr;
 
 struct Cartesian;
 struct Spherical;
