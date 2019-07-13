@@ -7,7 +7,7 @@ use crate::typenum::consts::{B1, U2};
 use crate::typenum::uint::Unsigned;
 use crate::typenum::{Add1, Exp, Pow, Same};
 use generic_array::{ArrayLength, GenericArray};
-use std::ops::{Add, Deref, DerefMut, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Deref, DerefMut, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use std::ops::{Index, IndexMut};
 
 /// Struct representing a tensor.
@@ -356,6 +356,21 @@ impl<T: CoordinateSystem> DerefMut for Scalar<T> {
 
 // Arithmetic operations
 
+impl<T, U> AddAssign<Tensor<T, U>> for Tensor<T, U>
+where
+    T: CoordinateSystem,
+    U: Variance,
+    T::Dimension: Pow<U::Rank>,
+    Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
+{
+    fn add_assign(&mut self, rhs: Tensor<T, U>) {
+        assert!(self.p == rhs.p);
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            self[i] += rhs[i];
+        }
+    }
+}
+
 impl<T, U> Add<Tensor<T, U>> for Tensor<T, U>
 where
     T: CoordinateSystem,
@@ -366,11 +381,23 @@ where
     type Output = Tensor<T, U>;
 
     fn add(mut self, rhs: Tensor<T, U>) -> Tensor<T, U> {
+        self += rhs;
+        self
+    }
+}
+
+impl<T, U> SubAssign<Tensor<T, U>> for Tensor<T, U>
+where
+    T: CoordinateSystem,
+    U: Variance,
+    T::Dimension: Pow<U::Rank>,
+    Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
+{
+    fn sub_assign(&mut self, rhs: Tensor<T, U>) {
         assert!(self.p == rhs.p);
         for i in 0..(Tensor::<T, U>::get_num_coords()) {
-            self[i] = self[i] + rhs[i];
+            self[i] -= rhs[i];
         }
-        self
     }
 }
 
@@ -384,11 +411,22 @@ where
     type Output = Tensor<T, U>;
 
     fn sub(mut self, rhs: Tensor<T, U>) -> Tensor<T, U> {
-        assert!(self.p == rhs.p);
-        for i in 0..(Tensor::<T, U>::get_num_coords()) {
-            self[i] = self[i] - rhs[i];
-        }
+        self -= rhs;
         self
+    }
+}
+
+impl<T, U> MulAssign<f64> for Tensor<T, U>
+where
+    T: CoordinateSystem,
+    U: Variance,
+    T::Dimension: Pow<U::Rank>,
+    Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
+{
+    fn mul_assign(&mut self, rhs: f64) {
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            self[i] *= rhs;
+        }
     }
 }
 
@@ -402,9 +440,7 @@ where
     type Output = Tensor<T, U>;
 
     fn mul(mut self, rhs: f64) -> Tensor<T, U> {
-        for i in 0..(Tensor::<T, U>::get_num_coords()) {
-            self[i] = self[i] * rhs;
-        }
+        self *= rhs;
         self
     }
 }
@@ -419,10 +455,22 @@ where
     type Output = Tensor<T, U>;
 
     fn mul(self, mut rhs: Tensor<T, U>) -> Tensor<T, U> {
-        for i in 0..(Tensor::<T, U>::get_num_coords()) {
-            rhs[i] = rhs[i] * self;
-        }
+        rhs *= self;
         rhs
+    }
+}
+
+impl<T, U> DivAssign<f64> for Tensor<T, U>
+where
+    T: CoordinateSystem,
+    U: Variance,
+    T::Dimension: Pow<U::Rank>,
+    Exp<T::Dimension, U::Rank>: ArrayLength<f64>,
+{
+    fn div_assign(&mut self, rhs: f64) {
+        for i in 0..(Tensor::<T, U>::get_num_coords()) {
+            self[i] /= rhs;
+        }
     }
 }
 
@@ -436,9 +484,7 @@ where
     type Output = Tensor<T, U>;
 
     fn div(mut self, rhs: f64) -> Tensor<T, U> {
-        for i in 0..(Tensor::<T, U>::get_num_coords()) {
-            self[i] = self[i] / rhs;
-        }
+        self /= rhs;
         self
     }
 }
